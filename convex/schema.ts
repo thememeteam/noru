@@ -1,0 +1,40 @@
+import { authTables } from "@convex-dev/auth/server";
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
+
+export default defineSchema({
+  ...authTables,
+  studentProfiles: defineTable({
+    userId: v.id("users"),
+    universityEmail: v.string(),
+    profilePhotoStorageId: v.id("_storage"),
+    completedAt: v.number(),
+  }).index("by_user_id", ["userId"]),
+  ridePosts: defineTable({
+    userId: v.id("users"),
+    riderName: v.string(),
+    startPoint: v.string(),
+    endPoint: v.string(),
+    vehicleType: v.union(
+      v.literal("auto"),
+      v.literal("cab"),
+      v.literal("ownBike"),
+      v.literal("ownCar"),
+    ),
+    capacity: v.number(),
+    joinedCount: v.number(),
+    isFull: v.boolean(),
+    isStopped: v.boolean(),
+    createdAt: v.number(),
+  })
+    .index("by_created_at", ["createdAt"])
+    .index("by_user_id", ["userId"]),
+  rideJoins: defineTable({
+    ridePostId: v.id("ridePosts"),
+    userId: v.id("users"),
+    joineeName: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_ride_post_id", ["ridePostId"])
+    .index("by_user_and_ride", ["userId", "ridePostId"]),
+});
