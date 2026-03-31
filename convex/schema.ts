@@ -37,4 +37,30 @@ export default defineSchema({
   })
     .index("by_ride_post_id", ["ridePostId"])
     .index("by_user_and_ride", ["userId", "ridePostId"]),
+  userReports: defineTable({
+    reporterUserId: v.id("users"),
+    reportedUserId: v.id("users"),
+    reportedName: v.string(),
+    reporterName: v.string(),
+    category: v.union(
+      v.literal("unsafeBehaviour"),
+      v.literal("harassmentConcern"),
+      v.literal("noShowComplaint"),
+    ),
+    details: v.string(),
+    ridePostId: v.optional(v.id("ridePosts")),
+    status: v.union(v.literal("unresolved"), v.literal("resolved")),
+    createdAt: v.number(),
+    resolvedAt: v.optional(v.number()),
+    resolvedByUserId: v.optional(v.id("users")),
+  })
+    .index("by_status_and_created_at", ["status", "createdAt"])
+    .index("by_reported_user_id", ["reportedUserId"])
+    .index("by_reporter_user_id", ["reporterUserId"]),
+  removedUsers: defineTable({
+    userId: v.id("users"),
+    removedAt: v.number(),
+    removedByUserId: v.id("users"),
+    reason: v.optional(v.string()),
+  }).index("by_user_id", ["userId"]),
 });

@@ -34,6 +34,61 @@ export const listJoinableRidePosts = query({
   },
 });
 
+export const getMyRideHistory = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const hostedPosts = await ctx.db
+      .query("ridePosts")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(100);
+
+    const joinedRides = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_user_and_ride", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(100);
+
+    const joinedRideItems = await Promise.all(
+      joinedRides.map(async (join) => {
+        const ridePost = await ctx.db.get(join.ridePostId);
+        if (!ridePost) {
+          return null;
+        }
+
+        return {
+          id: `joined:${join._id}`,
+          type: "joined" as const,
+          startPoint: ridePost.startPoint,
+          endPoint: ridePost.endPoint,
+          vehicleType: ridePost.vehicleType,
+          status: ridePost.isStopped ? "Stopped" : "Joined",
+          createdAt: join.createdAt,
+        };
+      }),
+    );
+
+    const hostedRideItems = hostedPosts.map((post) => ({
+      id: `hosted:${post._id}`,
+      type: "hosted" as const,
+      startPoint: post.startPoint,
+      endPoint: post.endPoint,
+      vehicleType: post.vehicleType,
+      status: post.isStopped ? "Stopped" : "Active",
+      createdAt: post.createdAt,
+    }));
+
+    return [...hostedRideItems, ...joinedRideItems.filter((item) => item !== null)].sort(
+      (a, b) => b.createdAt - a.createdAt,
+    );
+  },
+});
+
 export const createRidePost = mutation({
   args: {
     startPoint: v.string(),

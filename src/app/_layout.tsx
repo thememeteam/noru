@@ -22,9 +22,13 @@ export default function RootLayout() {
             headerRight: () => <HeaderProfileActions />,
             contentStyle: { backgroundColor: "#F4F6FB", paddingTop: 88 },
           }}>
-          <Stack.Screen name="index" options={{ title: "Noru" }} />
+          <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
           <Stack.Screen name="host" options={{ title: "Host a ride" }} />
           <Stack.Screen name="waiting" options={{ title: "Waiting room" }} />
+          <Stack.Screen name="feedback" options={{ title: "Feedback" }} />
+          <Stack.Screen name="report" options={{ title: "Report user" }} />
+          <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
+          <Stack.Screen name="profile" options={{ title: "Profile" }} />
         </Stack>
       </ConvexAuthProvider>
     </SafeAreaProvider>

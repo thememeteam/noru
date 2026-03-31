@@ -73,6 +73,7 @@ export function HostRideScreen() {
             <Text style={styles.title}>Host a ride</Text>
             <Text style={styles.description}>Create a ride post and wait for students to join.</Text>
 
+            <Text style={styles.sectionLabel}>Source</Text>
             <TextInput
               style={styles.input}
               value={startPoint}
@@ -82,17 +83,6 @@ export function HostRideScreen() {
             />
 
             <Text style={styles.sectionLabel}>Destination</Text>
-            <View style={styles.quickRow}>
-              <Pressable
-                style={[styles.vehicleChip, isCollegeDestination && styles.vehicleChipSelected]}
-                onPress={() => setEndPoint(COLLEGE_DESTINATION)}>
-                <Text
-                  style={[styles.vehicleChipText, isCollegeDestination && styles.vehicleChipTextSelected]}>
-                  {COLLEGE_DESTINATION}
-                </Text>
-              </Pressable>
-            </View>
-
             <TextInput
               style={styles.input}
               value={endPoint}

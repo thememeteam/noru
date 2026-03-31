@@ -25,7 +25,7 @@ export function WaitingRoomScreen() {
 
   useEffect(() => {
     if (!ridePostId || (onboarding && !onboarding.isCompleted)) {
-      router.replace("/");
+      router.navigate("/");
     }
   }, [onboarding, ridePostId]);
 
@@ -33,7 +33,7 @@ export function WaitingRoomScreen() {
     try {
       setStoppingRideId(id);
       await stopRidePost({ ridePostId: id as Id<"ridePosts"> });
-      router.replace("/");
+      router.replace({ pathname: "/feedback", params: { ridePostId: id } });
     } catch (error) {
       Alert.alert(
         "Could not stop ride",
@@ -78,6 +78,20 @@ export function WaitingRoomScreen() {
                     {hostedRideData.joinees.map((joinee) => (
                       <View key={joinee._id} style={styles.postItem}>
                         <Text style={styles.postName}>{joinee.joineeName}</Text>
+                        <AppButton
+                          title="Report user"
+                          onPress={() =>
+                            router.push({
+                              pathname: "/report",
+                              params: {
+                                reportedUserId: String(joinee.userId),
+                                reportedName: joinee.joineeName,
+                                ridePostId: hostedRideData.ridePost._id,
+                              },
+                            })
+                          }
+                          variant="secondary"
+                        />
                       </View>
                     ))}
                   </View>

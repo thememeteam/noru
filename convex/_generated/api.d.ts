@@ -10,6 +10,7 @@
 
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as moderation from "../moderation.js";
 import type * as onboarding from "../onboarding.js";
 import type * as rides from "../rides.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  moderation: typeof moderation;
   onboarding: typeof onboarding;
   rides: typeof rides;
 }>;

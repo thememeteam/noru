@@ -245,4 +245,110 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+  profileIdentityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  profileIdentityTextWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  profileHeroAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: "#F9A8D4",
+  },
+  profileHeroAvatarFallback: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 2,
+    borderColor: "#F9A8D4",
+    backgroundColor: "#FCE7F3",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileHeroAvatarFallbackText: {
+    color: "#9D174D",
+    fontWeight: "700",
+    fontSize: 24,
+  },
+  profileName: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: "#4B5563",
+  },
+  starRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  starButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D6DCE7",
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  starButtonActive: {
+    borderColor: "#b50246",
+    backgroundColor: "#FCE7F3",
+  },
+  starText: {
+    color: "#94A3B8",
+    fontSize: 20,
+  },
+  starTextActive: {
+    color: "#b50246",
+  },
+  feedbackTextArea: {
+    minHeight: 96,
+  },
+  moderationMetricRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  moderationMetricCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E4E7EE",
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+  },
+  moderationMetricValue: {
+    fontSize: 34,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  moderationMetricLabel: {
+    fontSize: 14,
+    color: "#4B5563",
+  },
+  moderationSelectedItem: {
+    borderColor: "#b50246",
+    backgroundColor: "#FFF1F6",
+  },
+  moderationQuote: {
+    fontSize: 20,
+    fontStyle: "italic",
+    color: "#475569",
+    lineHeight: 30,
+  },
+  moderationActionFlex: {
+    flex: 1,
+  },
 });

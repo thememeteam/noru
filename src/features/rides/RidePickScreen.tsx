@@ -59,6 +59,20 @@ export function RidePickScreen() {
                     onPress={() => void onJoinRide(post._id)}
                     disabled={joiningRideId === post._id}
                   />
+                  <AppButton
+                    title="Report user"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/report",
+                        params: {
+                          reportedUserId: String(post.userId),
+                          reportedName: post.riderName,
+                          ridePostId: post._id,
+                        },
+                      })
+                    }
+                    variant="secondary"
+                  />
                 </View>
               ))}
             </View>

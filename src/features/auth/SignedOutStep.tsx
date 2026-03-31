@@ -54,10 +54,10 @@ export function SignedOutStep() {
       <View style={styles.card}>
         <Text style={styles.title}>Trusted campus rides</Text>
         <Text style={styles.description}>
-          Sign in with your university Entra account to continue.
+          Sign in with your university account to continue.
         </Text>
         <AppButton
-          title={isBusy ? "Connecting to Entra..." : "Login with University Entra"}
+          title={isBusy ? "Connecting to Microsoft Entra..." : "Login with University mail"}
           onPress={() => void startEntraSignIn()}
           disabled={isBusy}
         />
