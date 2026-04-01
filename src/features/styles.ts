@@ -7,7 +7,7 @@ export const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: "4%",
   },
   centeredWrap: {
     flex: 1,
@@ -21,6 +21,9 @@ export const styles = StyleSheet.create({
     backgroundColor: "#0B0F14",
   },
   boardContent: {
+    width: "100%",
+    maxWidth: 900,
+    alignSelf: "center",
     gap: 16,
     paddingVertical: 16,
     paddingTop: 6,
@@ -40,10 +43,12 @@ export const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "left",
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "GoogleSansFlexExtraRegular",
   },
   card: {
     width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
     gap: 16,
     paddingHorizontal: 18,
     paddingVertical: 18,
@@ -63,7 +68,9 @@ export const styles = StyleSheet.create({
   },
   camera: {
     width: "100%",
-    height: 340,
+    aspectRatio: 3 / 4,
+    minHeight: 280,
+    maxHeight: 420,
     borderRadius: 14,
   },
   buttonRow: {
@@ -99,7 +106,7 @@ export const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "GoogleSansFlexMedium",
   },
   buttonTextSecondary: {
     color: "#F8FAFC",
@@ -121,10 +128,11 @@ export const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 17,
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "GoogleSansFlexRegular",
   },
   quickRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   vehicleRow: {
@@ -171,7 +179,7 @@ export const styles = StyleSheet.create({
   postName: {
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "GoogleSansFlexRegular",
   },
   postMeta: {
     color: "#94A3B8",
@@ -289,7 +297,7 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "GoogleSansFlexRegular",
   },
   profileEmail: {
     fontSize: 14,
@@ -326,10 +334,12 @@ export const styles = StyleSheet.create({
   },
   moderationMetricRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 12,
   },
   moderationMetricCard: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: 150,
     borderWidth: 1,
     borderColor: "#263245",
     backgroundColor: "#0F172A",
@@ -344,7 +354,7 @@ export const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "GoogleSansFlexRegular",
   },
   moderationMetricLabel: {
     fontSize: 14,

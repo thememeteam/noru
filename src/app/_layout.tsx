@@ -9,19 +9,22 @@ import { HeaderProfileActions } from "../components/HeaderProfileActions";
 import { AppThemeProvider, useAppTheme } from "../features/theme/AppTheme";
 import { convex, convexAuthTokenStorage } from "../lib/convex";
 
-Text.defaultProps = Text.defaultProps || {};
-Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: "GoogleSansFlexMedium" }];
+const ThemedText = Text as any;
+const ThemedTextInput = TextInput as any;
 
-TextInput.defaultProps = TextInput.defaultProps || {};
-TextInput.defaultProps.style = [
-  TextInput.defaultProps.style,
+ThemedText.defaultProps = ThemedText.defaultProps || {};
+ThemedText.defaultProps.style = [ThemedText.defaultProps.style, { fontFamily: "GoogleSansFlexMedium" }];
+
+ThemedTextInput.defaultProps = ThemedTextInput.defaultProps || {};
+ThemedTextInput.defaultProps.style = [
+  ThemedTextInput.defaultProps.style,
   { fontFamily: "GoogleSansFlexMedium" },
 ];
 
 function AppNavigator() {
   const [fontsLoaded] = useFonts({
-    GoogleSansFlexMedium: require("../../assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Medium.ttf"),
-    GoogleSansFlexBold: require("../../assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Bold.ttf"),
+    GoogleSansFlexMedium: require("C:\\Users\\rish9\\Documents\\noru\\assets\\fonts\\Google_Sans_Flex\\static\\GoogleSansFlex_24pt-Medium.ttf"),
+    GoogleSansFlexBold: require("C:\\Users\\rish9\\Documents\\noru\\assets\\fonts\\Google_Sans_Flex\\static\\GoogleSansFlex_24pt-Bold.ttf"),
   });
   const { colors } = useAppTheme();
 
@@ -38,7 +41,7 @@ function AppNavigator() {
         screenOptions={{
           headerTintColor: colors.headerTint,
           headerStyle: { backgroundColor: colors.headerBackground },
-          headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "GoogleSansFlexBold" },
+          headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "IBMPlexSansBold" },
           headerTransparent: true,
           headerShadowVisible: false,
           headerRight: () => <HeaderProfileActions />,

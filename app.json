@@ -31,8 +31,8 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Medium.ttf",
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Bold.ttf"
+            "./assets/fonts/IBM_Plex_Sans/static/IBMPlexSans-Medium.ttf",
+            "./assets/fonts/IBM_Plex_Sans/static/IBMPlexSans-Bold.ttf"
           ]
         }
       ]
