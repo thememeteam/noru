@@ -4,9 +4,10 @@ import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { api } from "../../convex/_generated/api";
-import { styles } from "../features/styles";
+import { useAppStyles } from "../features/theme/AppTheme";
 
 export function ProfileTopRight() {
+  const styles = useAppStyles();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
   const { signOut } = useAuthActions();
 

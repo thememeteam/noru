@@ -6,73 +6,67 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 
 export function ModerationDashboardScreen() {
+  const styles = useAppStyles();
+  const access = useQuery(api.moderation.getModerationAccess);
   const dashboard = useQuery(api.moderation.getModerationDashboard);
-  const markResolved = useMutation(api.moderation.markReportResolved);
-  const removeUser = useMutation(api.moderation.removeUser);
+  const setIncidentStatus = useMutation(api.moderation.setIncidentStatus);
 
   const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [isResolving, setIsResolving] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   const selectedReport = useMemo(() => {
-    if (!dashboard?.unresolvedReports?.length) {
+    if (!dashboard?.incidents?.length) {
       return null;
     }
 
     if (!selectedReportId) {
-      return dashboard.unresolvedReports[0];
+      return dashboard.incidents[0];
     }
 
-    return dashboard.unresolvedReports.find((item) => item._id === selectedReportId) ?? dashboard.unresolvedReports[0];
+    return dashboard.incidents.find((item) => item._id === selectedReportId) ?? dashboard.incidents[0];
   }, [dashboard, selectedReportId]);
 
-  const onResolve = async () => {
-    if (!selectedReport || isResolving) {
+  const onToggleStatus = async () => {
+    if (!selectedReport || isUpdatingStatus) {
       return;
     }
 
     try {
-      setIsResolving(true);
-      await markResolved({ reportId: selectedReport._id as Id<"userReports"> });
-    } catch (error) {
-      Alert.alert(
-        "Could not resolve report",
-        error instanceof Error ? error.message : "Please try again.",
-      );
-    } finally {
-      setIsResolving(false);
-    }
-  };
-
-  const onRemoveUser = async () => {
-    if (!selectedReport || isRemoving) {
-      return;
-    }
-
-    try {
-      setIsRemoving(true);
-      await removeUser({
-        userId: selectedReport.reportedUserId,
-        reason: `Removed from moderation dashboard report ${selectedReport._id}`,
+      setIsUpdatingStatus(true);
+      await setIncidentStatus({
+        reportId: selectedReport._id as Id<"userReports">,
+        status: selectedReport.status === "resolved" ? "unresolved" : "resolved",
       });
-      await markResolved({ reportId: selectedReport._id as Id<"userReports"> });
     } catch (error) {
       Alert.alert(
-        "Could not remove user",
+        "Could not update incident",
         error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
-      setIsRemoving(false);
+      setIsUpdatingStatus(false);
     }
   };
 
-  if (dashboard === undefined) {
+  if (access === undefined || dashboard === undefined) {
     return (
       <View style={styles.loadingWrap}>
         <ActivityIndicator size="large" color="#b50246" />
+      </View>
+    );
+  }
+
+  if (!access.isAdmin) {
+    return (
+      <View style={styles.screenContainer}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.card}>
+            <Text style={styles.title}>Moderation</Text>
+            <Text style={styles.description}>Admin access required for this page.</Text>
+          </View>
+        </SafeAreaView>
       </View>
     );
   }
@@ -95,16 +89,17 @@ export function ModerationDashboardScreen() {
             </View>
 
             <Text style={styles.sectionLabel}>Unresolved reports</Text>
-            {dashboard.unresolvedReports.length === 0 ? (
-              <Text style={styles.description}>No unresolved reports.</Text>
+            {dashboard.incidents.length === 0 ? (
+              <Text style={styles.description}>No incidents found.</Text>
             ) : (
               <View style={styles.postList}>
-                {dashboard.unresolvedReports.map((report) => {
+                {dashboard.incidents.map((report) => {
                   const isSelected = selectedReport?._id === report._id;
                   return (
                     <View key={report._id} style={[styles.postItem, isSelected && styles.moderationSelectedItem]}>
                       <Text style={styles.postName}>{report.categoryLabel}</Text>
                       <Text style={styles.postMeta}>Reported: {report.reportedName} · by {report.reporterName}</Text>
+                      <Text style={styles.postMeta}>Status: {report.status}</Text>
                       <AppButton title="View" onPress={() => setSelectedReportId(report._id)} variant="secondary" />
                     </View>
                   );
@@ -121,21 +116,32 @@ export function ModerationDashboardScreen() {
               <>
                 <Text style={styles.postName}>{selectedReport.categoryLabel} — {selectedReport.reportedName}</Text>
                 <Text style={styles.moderationQuote}>"{selectedReport.details}"</Text>
+                <Text style={styles.postMeta}>Status: {selectedReport.status}</Text>
+                {selectedReport.rideContext ? (
+                  <>
+                    <Text style={styles.sectionLabel}>Ride context</Text>
+                    <Text>
+                      {selectedReport.rideContext.startPoint} {"->"} {selectedReport.rideContext.endPoint}
+                    </Text>
+                    <Text style={styles.postMeta}>{selectedReport.rideContext.vehicleType}</Text>
+                    <Text style={styles.postMeta}>Host: {selectedReport.rideContext.riderName}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.postMeta}>No linked ride details.</Text>
+                )}
                 <View style={styles.quickRow}>
                   <View style={styles.moderationActionFlex}>
                     <AppButton
-                      title={isResolving ? "Resolving..." : "Mark resolved"}
-                      onPress={() => void onResolve()}
-                      disabled={isResolving}
+                      title={
+                        isUpdatingStatus
+                          ? "Updating..."
+                          : selectedReport.status === "resolved"
+                            ? "Mark unresolved"
+                            : "Mark resolved"
+                      }
+                      onPress={() => void onToggleStatus()}
+                      disabled={isUpdatingStatus}
                       variant="secondary"
-                    />
-                  </View>
-                  <View style={styles.moderationActionFlex}>
-                    <AppButton
-                      title={isRemoving ? "Removing..." : "Remove user"}
-                      onPress={() => void onRemoveUser()}
-                      disabled={isRemoving}
-                      variant="danger"
                     />
                   </View>
                 </View>

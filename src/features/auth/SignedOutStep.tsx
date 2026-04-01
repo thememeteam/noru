@@ -6,13 +6,14 @@ import React, { useState } from "react";
 import { Alert, Text, View } from "react-native";
 
 import { AppButton } from "../../components/AppButton";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 
 const OAUTH_VERIFIER_KEY = "__convexAuthOAuthVerifier_noru";
 
 WebBrowser.maybeCompleteAuthSession();
 
 export function SignedOutStep() {
+  const styles = useAppStyles();
   const { signIn } = useAuthActions();
   const [isBusy, setIsBusy] = useState(false);
 

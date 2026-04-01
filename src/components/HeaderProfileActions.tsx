@@ -21,7 +21,13 @@ export function HeaderProfileActions() {
         {onboardingState.profilePhotoUrl ? (
           <Image
             source={{ uri: onboardingState.profilePhotoUrl }}
-            style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: "#F9A8D4" }}
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: "#F9A8D4",
+            }}
           />
         ) : (
           <View
@@ -35,7 +41,9 @@ export function HeaderProfileActions() {
               alignItems: "center",
               justifyContent: "center",
             }}>
-            <Text style={{ color: "#9D174D", fontWeight: "700", fontSize: 12 }}>{avatarInitial}</Text>
+            <Text style={{ color: "#9D174D", fontWeight: "700", fontSize: 12 }}>
+              {avatarInitial}
+            </Text>
           </View>
         )}
       </Pressable>

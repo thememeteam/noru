@@ -8,9 +8,10 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { RidePickScreen } from "../rides/RidePickScreen";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 
 export function FaceCaptureStep() {
+  const styles = useAppStyles();
   const onboarding = useQuery(api.onboarding.getOnboardingState);
   const generateUploadUrl = useMutation(api.onboarding.generateProfilePhotoUploadUrl);
   const completeOnboarding = useMutation(api.onboarding.completeStudentOnboarding);

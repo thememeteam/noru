@@ -6,10 +6,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 import { COLLEGE_DESTINATION, VEHICLE_LABELS, VEHICLE_OPTIONS, type VehicleType } from "./constants";
 
 export function HostRideScreen() {
+  const styles = useAppStyles();
   const onboarding = useQuery(api.onboarding.getOnboardingState);
   const createRidePost = useMutation(api.rides.createRidePost);
 

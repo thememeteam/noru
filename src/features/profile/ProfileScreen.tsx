@@ -8,7 +8,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
 import { VEHICLE_LABELS } from "../rides/constants";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 
 const rideDateFormatter = new Intl.DateTimeFormat(undefined, {
   year: "numeric",
@@ -28,10 +28,19 @@ function formatRideDateTime(timestamp: number) {
 }
 
 export function ProfileScreen() {
+  const styles = useAppStyles();
   const { signOut } = useAuthActions();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
+  const moderationAccess = useQuery(
+    api.moderation.getModerationAccess,
+    onboardingState?.isAuthenticated ? {} : "skip",
+  );
   const rideHistory = useQuery(
     api.rides.getMyRideHistory,
+    onboardingState?.isAuthenticated ? {} : "skip",
+  );
+  const myRatingSummary = useQuery(
+    api.rides.getMyRatingSummary,
     onboardingState?.isAuthenticated ? {} : "skip",
   );
 
@@ -107,7 +116,7 @@ export function ProfileScreen() {
                 {pastRides.map((item) => (
                   <View key={item.id} style={styles.postItem}>
                     <Text>
-                      {item.startPoint} {"->"} {item.endPoint}
+                      {item.startPoint} {"➡️"} {item.endPoint}
                     </Text>
                     <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]}</Text>
                     <Text style={styles.postMeta}>{formatRideDateTime(item.createdAt)}</Text>
@@ -117,7 +126,26 @@ export function ProfileScreen() {
             )}
           </View>
           <View style={styles.card}>
-            <AppButton title="Moderation dashboard" onPress={() => router.push("/moderation")} variant="secondary" />
+            <Text style={styles.sectionLabel}>My rating</Text>
+            {myRatingSummary === undefined ? (
+              <Text style={styles.description}>Loading rating...</Text>
+            ) : myRatingSummary.totalRatings === 0 ? (
+              <Text style={styles.description}>No ratings yet.</Text>
+            ) : (
+              <>
+                <Text style={styles.postName}>{myRatingSummary.averageRating} / 5</Text>
+              </>
+            )}
+          </View>
+          <View style={styles.card}>
+            <AppButton title="Report a user" onPress={() => router.push("/report")} variant="secondary" />
+            {moderationAccess?.isAdmin ? (
+              <AppButton
+                title="Moderation dashboard"
+                onPress={() => router.push("/moderation")}
+                variant="secondary"
+              />
+            ) : null}
             <AppButton title="Sign out" onPress={() => void onSignOut()} variant="danger" />
           </View>
         </ScrollView>

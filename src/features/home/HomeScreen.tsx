@@ -5,9 +5,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SignedOutStep } from "../auth/SignedOutStep";
 import { FaceCaptureStep } from "../onboarding/FaceCaptureStep";
-import { styles } from "../styles";
+import { useAppStyles } from "../theme/AppTheme";
 
 export function HomeScreen() {
+  const styles = useAppStyles();
+
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>

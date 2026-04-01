@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, Text } from "react-native";
 
-import { styles } from "../features/styles";
+import { useAppStyles } from "../features/theme/AppTheme";
 
 export type AppButtonVariant = "primary" | "secondary" | "danger";
 
@@ -16,6 +16,8 @@ export function AppButton({
   disabled?: boolean;
   variant?: AppButtonVariant;
 }) {
+  const styles = useAppStyles();
+
   return (
     <Pressable
       onPress={onPress}

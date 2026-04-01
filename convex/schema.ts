@@ -36,6 +36,7 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_ride_post_id", ["ridePostId"])
+    .index("by_user_id", ["userId"])
     .index("by_user_and_ride", ["userId", "ridePostId"]),
   userReports: defineTable({
     reporterUserId: v.id("users"),
@@ -63,4 +64,28 @@ export default defineSchema({
     removedByUserId: v.id("users"),
     reason: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
+  userNotifications: defineTable({
+    userId: v.id("users"),
+    title: v.string(),
+    message: v.string(),
+    type: v.union(v.literal("rideRemoved"), v.literal("info")),
+    isRead: v.boolean(),
+    ridePostId: v.optional(v.id("ridePosts")),
+    createdAt: v.number(),
+  })
+    .index("by_user_id_and_created_at", ["userId", "createdAt"])
+    .index("by_user_id_and_is_read", ["userId", "isRead"]),
+  userRatings: defineTable({
+    ridePostId: v.id("ridePosts"),
+    raterUserId: v.id("users"),
+    rateeUserId: v.id("users"),
+    rating: v.number(),
+    whatWasGood: v.optional(v.string()),
+    whatWasBad: v.optional(v.string()),
+    anythingElse: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_ride_and_rater_and_ratee", ["ridePostId", "raterUserId", "rateeUserId"])
+    .index("by_ratee_user_id", ["rateeUserId"]),
 });
