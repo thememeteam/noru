@@ -145,7 +145,7 @@ export function ReportUserScreen() {
                 {sharedRidesQuery === undefined ? (
                   <Text style={styles.postMeta}>Loading shared rides...</Text>
                 ) : sharedRides.length === 0 ? (
-                  <Text style={styles.postMeta}>No shared rides found with this user. You can still submit without selecting a ride.</Text>
+                  <Text style={styles.postMeta}>No shared rides found with this user today.</Text>
                 ) : (
                   <View style={styles.postList}>
                     {sharedRides.map((ride) => {
