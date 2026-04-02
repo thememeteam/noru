@@ -45,6 +45,101 @@ async function requireAdmin(ctx: any, userId: any) {
   return access;
 }
 
+function getCurrentDayBounds(now: number) {
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const istNow = now + IST_OFFSET_MS;
+  const istDate = new Date(istNow);
+  const startOfDay = Date.UTC(
+    istDate.getUTCFullYear(),
+    istDate.getUTCMonth(),
+    istDate.getUTCDate(),
+  ) - IST_OFFSET_MS;
+  const endOfDay = startOfDay + 24 * 60 * 60 * 1000;
+  return { startOfDay, endOfDay };
+}
+
+async function getSharedRideOptions(ctx: any, reporterUserId: any, reportedUserId: any) {
+  const sharedRides: Array<{
+    ridePostId: any;
+    startPoint: string;
+    endPoint: string;
+    vehicleType: string;
+    riderName: string;
+    createdAt: number;
+    hostedBy: "reporter" | "reported";
+  }> = [];
+  const { startOfDay, endOfDay } = getCurrentDayBounds(Date.now());
+
+  const seenRidePostIds = new Set<string>();
+
+  const reporterHostedRides = await ctx.db
+    .query("ridePosts")
+    .withIndex("by_user_id", (q: any) => q.eq("userId", reporterUserId))
+    .collect();
+
+  for (const ridePost of reporterHostedRides) {
+    if (ridePost.createdAt < startOfDay || ridePost.createdAt >= endOfDay) {
+      continue;
+    }
+
+    const reporteeJoin = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_user_and_ride", (q: any) => q.eq("userId", reportedUserId).eq("ridePostId", ridePost._id))
+      .first();
+
+    if (!reporteeJoin) {
+      continue;
+    }
+
+    sharedRides.push({
+      ridePostId: ridePost._id,
+      startPoint: ridePost.startPoint,
+      endPoint: ridePost.endPoint,
+      vehicleType: ridePost.vehicleType,
+      riderName: ridePost.riderName,
+      createdAt: ridePost.createdAt,
+      hostedBy: "reporter",
+    });
+    seenRidePostIds.add(String(ridePost._id));
+  }
+
+  const reportedHostedRides = await ctx.db
+    .query("ridePosts")
+    .withIndex("by_user_id", (q: any) => q.eq("userId", reportedUserId))
+    .collect();
+
+  for (const ridePost of reportedHostedRides) {
+    if (ridePost.createdAt < startOfDay || ridePost.createdAt >= endOfDay) {
+      continue;
+    }
+
+    if (seenRidePostIds.has(String(ridePost._id))) {
+      continue;
+    }
+
+    const reporterJoin = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_user_and_ride", (q: any) => q.eq("userId", reporterUserId).eq("ridePostId", ridePost._id))
+      .first();
+
+    if (!reporterJoin) {
+      continue;
+    }
+
+    sharedRides.push({
+      ridePostId: ridePost._id,
+      startPoint: ridePost.startPoint,
+      endPoint: ridePost.endPoint,
+      vehicleType: ridePost.vehicleType,
+      riderName: ridePost.riderName,
+      createdAt: ridePost.createdAt,
+      hostedBy: "reported",
+    });
+  }
+
+  return sharedRides.sort((a, b) => b.createdAt - a.createdAt);
+}
+
 export const createUserReport = mutation({
   args: {
     reportedUserId: v.optional(v.id("users")),
@@ -82,6 +177,14 @@ export const createUserReport = mutation({
 
     if (reporterUserId === resolvedReportedUserId) {
       throw new Error("You cannot report yourself.");
+    }
+
+    if (args.ridePostId) {
+      const sharedRideOptions = await getSharedRideOptions(ctx, reporterUserId, resolvedReportedUserId);
+      const isSharedRide = sharedRideOptions.some((item) => item.ridePostId === args.ridePostId);
+      if (!isSharedRide) {
+        throw new Error("Selected ride is invalid. Choose a ride where both users were present.");
+      }
     }
 
     const reason = args.reason.trim();
@@ -150,6 +253,31 @@ export const getReportTargetSuggestions = query({
           plainName: name,
         };
       });
+  },
+});
+
+export const getSharedReportableRides = query({
+  args: {
+    reportedUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const reporterUserId = await getCurrentUserOrThrow(ctx);
+
+    if (reporterUserId === args.reportedUserId) {
+      return [];
+    }
+
+    const sharedRides = await getSharedRideOptions(ctx, reporterUserId, args.reportedUserId);
+
+    return sharedRides.map((ride) => ({
+      ridePostId: ride.ridePostId,
+      startPoint: ride.startPoint,
+      endPoint: ride.endPoint,
+      vehicleType: ride.vehicleType,
+      riderName: ride.riderName,
+      createdAt: ride.createdAt,
+      hostedBy: ride.hostedBy,
+    }));
   },
 });
 

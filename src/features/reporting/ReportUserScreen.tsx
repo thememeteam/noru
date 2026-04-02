@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -22,15 +22,40 @@ export function ReportUserScreen() {
 
   const [reportedName, setReportedName] = useState(initialReportedName);
   const [selectedReportedUserId, setSelectedReportedUserId] = useState<string | null>(reportedUserId ?? null);
+  const [selectedRidePostId, setSelectedRidePostId] = useState<string | null>(ridePostId ?? null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const suggestions = useQuery(api.moderation.getReportTargetSuggestions, {
     keyword: reportedName,
   }) ?? [];
 
+  const sharedRidesQuery = useQuery(
+    api.moderation.getSharedReportableRides,
+    selectedReportedUserId ? { reportedUserId: selectedReportedUserId as Id<"users"> } : "skip",
+  );
+  const sharedRides = sharedRidesQuery ?? [];
+
+  useEffect(() => {
+    if (!selectedRidePostId || sharedRidesQuery === undefined) {
+      return;
+    }
+
+    const isStillValid = sharedRides.some((ride) => ride.ridePostId === selectedRidePostId);
+    if (!isStillValid) {
+      setSelectedRidePostId(null);
+    }
+  }, [selectedRidePostId, sharedRides, sharedRidesQuery]);
+
+  const isRideSelectionRequired = selectedReportedUserId !== null && sharedRides.length > 0;
+
   const canSubmit = useMemo(() => {
-    return reportedName.trim().length > 0 && reason.trim().length >= 8 && !isSubmitting;
-  }, [isSubmitting, reason, reportedName]);
+    return (
+      reportedName.trim().length > 0
+      && reason.trim().length >= 8
+      && !isSubmitting
+      && (!isRideSelectionRequired || Boolean(selectedRidePostId))
+    );
+  }, [isSubmitting, isRideSelectionRequired, reason, reportedName, selectedRidePostId]);
 
   const onSubmit = async () => {
     if (!canSubmit) {
@@ -43,7 +68,7 @@ export function ReportUserScreen() {
         reportedUserId: selectedReportedUserId ? (selectedReportedUserId as Id<"users">) : undefined,
         reportedName: reportedName.trim(),
         reason: reason.trim(),
-        ridePostId: ridePostId ? (ridePostId as Id<"ridePosts">) : undefined,
+        ridePostId: selectedRidePostId ? (selectedRidePostId as Id<"ridePosts">) : undefined,
       });
 
       if (stopRideOnSubmit && ridePostId) {
@@ -105,12 +130,45 @@ export function ReportUserScreen() {
                       onPress={() => {
                         setReportedName(item.plainName);
                         setSelectedReportedUserId(item.userId);
+                        setSelectedRidePostId(ridePostId ?? null);
                       }}>
                       <Text style={styles.postName}>{item.displayName}</Text>
                     </Pressable>
                   );
                 })}
               </View>
+            ) : null}
+
+            {selectedReportedUserId ? (
+              <>
+                <Text style={styles.sectionLabel}>Ride to report</Text>
+                {sharedRidesQuery === undefined ? (
+                  <Text style={styles.postMeta}>Loading shared rides...</Text>
+                ) : sharedRides.length === 0 ? (
+                  <Text style={styles.postMeta}>No shared rides found with this user. You can still submit without selecting a ride.</Text>
+                ) : (
+                  <View style={styles.postList}>
+                    {sharedRides.map((ride) => {
+                      const isSelected = selectedRidePostId === ride.ridePostId;
+                      const rideDate = new Date(ride.createdAt).toLocaleString();
+                      return (
+                        <Pressable
+                          key={ride.ridePostId}
+                          style={[styles.postItem, isSelected && styles.moderationSelectedItem]}
+                          onPress={() => setSelectedRidePostId(ride.ridePostId)}>
+                          <Text style={styles.postName}>{ride.startPoint} {"->"} {ride.endPoint}</Text>
+                          <Text style={styles.postMeta}>{rideDate}</Text>
+                          <Text style={styles.postMeta}>Vehicle: {ride.vehicleType}</Text>
+                          <Text style={styles.postMeta}>Hosted by: {ride.riderName}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
+                {isRideSelectionRequired && !selectedRidePostId ? (
+                  <Text style={styles.postMeta}>Select a ride from the shared rides above.</Text>
+                ) : null}
+              </>
             ) : null}
 
             <Text style={styles.sectionLabel}>Reason</Text>

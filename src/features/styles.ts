@@ -43,7 +43,7 @@ export const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "left",
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexExtraRegular",
+    fontFamily: "GoogleSansFlexMedium",
   },
   card: {
     width: "100%",
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 17,
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexRegular",
+    fontFamily: "GoogleSansFlexBold",
   },
   quickRow: {
     flexDirection: "row",
@@ -179,7 +179,7 @@ export const styles = StyleSheet.create({
   postName: {
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexRegular",
+    fontFamily: "GoogleSansFlexBold",
   },
   postMeta: {
     color: "#94A3B8",
@@ -297,7 +297,7 @@ export const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexRegular",
+    fontFamily: "GoogleSansFlexBold",
   },
   profileEmail: {
     fontSize: 14,
@@ -354,12 +354,21 @@ export const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexRegular",
+    fontFamily: "GoogleSansFlexBold",
   },
   moderationMetricLabel: {
     fontSize: 14,
     color: "#94A3B8",
     fontFamily: "GoogleSansFlexMedium",
+  },
+  moderationFilterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  moderationFilterButtonWrap: {
+    flexGrow: 1,
+    minWidth: 150,
   },
   moderationSelectedItem: {
     borderColor: "#E11D48",
@@ -374,6 +383,50 @@ export const styles = StyleSheet.create({
   },
   moderationActionFlex: {
     flex: 1,
+  },
+  moderationContextCard: {
+    borderWidth: 1,
+    borderColor: "#334155",
+    backgroundColor: "#0F172A",
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  moderationContextRouteChip: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#475569",
+    backgroundColor: "#1E293B",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  moderationContextRouteText: {
+    color: "#E2E8F0",
+    fontSize: 13,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  moderationContextRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+  },
+  moderationContextLabel: {
+    color: "#94A3B8",
+    fontSize: 13,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  moderationContextValue: {
+    color: "#F8FAFC",
+    fontSize: 14,
+    textAlign: "right",
+    flexShrink: 1,
+    fontFamily: "GoogleSansFlexBold",
+  },
+  moderationContextDivider: {
+    height: 1,
+    backgroundColor: "#334155",
   },
   personRow: {
     flexDirection: "row",
@@ -482,6 +535,12 @@ export const lightStyleOverrides = StyleSheet.create({
   moderationMetricCard: { borderColor: "#E4E7EE", backgroundColor: "#F8FAFC" },
   moderationMetricValue: { color: "#111827" },
   moderationMetricLabel: { color: "#4B5563" },
+  moderationContextCard: { borderColor: "#E4E7EE", backgroundColor: "#F8FAFC" },
+  moderationContextRouteChip: { borderColor: "#D6DCE7", backgroundColor: "#FFFFFF" },
+  moderationContextRouteText: { color: "#334155" },
+  moderationContextLabel: { color: "#64748B" },
+  moderationContextValue: { color: "#111827" },
+  moderationContextDivider: { backgroundColor: "#E2E8F0" },
   moderationSelectedItem: { borderColor: "#b50246", backgroundColor: "#FFF1F6" },
   moderationQuote: { color: "#475569" },
   personAvatarSmall: { borderColor: "#F9A8D4" },
@@ -492,3 +551,5 @@ export const lightStyleOverrides = StyleSheet.create({
   overlayProfileAvatarFallback: { borderColor: "#F9A8D4", backgroundColor: "#FCE7F3" },
   overlayProfileAvatarFallbackText: { color: "#9D174D" },
 });
+
+

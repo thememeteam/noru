@@ -1,54 +1,27 @@
-import { useMutation, useQuery } from "convex/react";
+import { useQuery } from "convex/react";
+import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 
 export function ModerationDashboardScreen() {
   const styles = useAppStyles();
+  const router = useRouter();
   const access = useQuery(api.moderation.getModerationAccess);
   const dashboard = useQuery(api.moderation.getModerationDashboard);
-  const setIncidentStatus = useMutation(api.moderation.setIncidentStatus);
+  const [reportFilter, setReportFilter] = useState<"unresolved" | "resolved">("unresolved");
 
-  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-
-  const selectedReport = useMemo(() => {
+  const filteredIncidents = useMemo(() => {
     if (!dashboard?.incidents?.length) {
-      return null;
+      return [];
     }
 
-    if (!selectedReportId) {
-      return dashboard.incidents[0];
-    }
-
-    return dashboard.incidents.find((item) => item._id === selectedReportId) ?? dashboard.incidents[0];
-  }, [dashboard, selectedReportId]);
-
-  const onToggleStatus = async () => {
-    if (!selectedReport || isUpdatingStatus) {
-      return;
-    }
-
-    try {
-      setIsUpdatingStatus(true);
-      await setIncidentStatus({
-        reportId: selectedReport._id as Id<"userReports">,
-        status: selectedReport.status === "resolved" ? "unresolved" : "resolved",
-      });
-    } catch (error) {
-      Alert.alert(
-        "Could not update incident",
-        error instanceof Error ? error.message : "Please try again.",
-      );
-    } finally {
-      setIsUpdatingStatus(false);
-    }
-  };
+    return dashboard.incidents.filter((report) => report.status === reportFilter);
+  }, [dashboard, reportFilter]);
 
   if (access === undefined || dashboard === undefined) {
     return (
@@ -88,64 +61,48 @@ export function ModerationDashboardScreen() {
               </View>
             </View>
 
-            <Text style={styles.sectionLabel}>Unresolved reports</Text>
-            {dashboard.incidents.length === 0 ? (
-              <Text style={styles.description}>No incidents found.</Text>
+            <View style={styles.moderationFilterRow}>
+              <View style={styles.moderationFilterButtonWrap}>
+                <AppButton
+                  title="Unresolved"
+                  onPress={() => setReportFilter("unresolved")}
+                  variant={reportFilter === "unresolved" ? "primary" : "secondary"}
+                />
+              </View>
+              <View style={styles.moderationFilterButtonWrap}>
+                <AppButton
+                  title="Resolved"
+                  onPress={() => setReportFilter("resolved")}
+                  variant={reportFilter === "resolved" ? "primary" : "secondary"}
+                />
+              </View>
+            </View>
+
+            <Text style={styles.sectionLabel}>{reportFilter === "unresolved" ? "Unresolved reports" : "Resolved reports"}</Text>
+            {filteredIncidents.length === 0 ? (
+              <Text style={styles.description}>No {reportFilter} incidents found.</Text>
             ) : (
               <View style={styles.postList}>
-                {dashboard.incidents.map((report) => {
-                  const isSelected = selectedReport?._id === report._id;
+                {filteredIncidents.map((report) => {
                   return (
-                    <View key={report._id} style={[styles.postItem, isSelected && styles.moderationSelectedItem]}>
+                    <View key={report._id} style={styles.postItem}>
                       <Text style={styles.postName}>{report.categoryLabel}</Text>
                       <Text style={styles.postMeta}>Reported: {report.reportedName} · by {report.reporterName}</Text>
                       <Text style={styles.postMeta}>Status: {report.status}</Text>
-                      <AppButton title="View" onPress={() => setSelectedReportId(report._id)} variant="secondary" />
+                      <AppButton
+                        title="View"
+                        onPress={() =>
+                          router.push({
+                            pathname: "/moderation/[reportId]",
+                            params: { reportId: report._id },
+                          })
+                        }
+                        variant="secondary"
+                      />
                     </View>
                   );
                 })}
               </View>
-            )}
-          </View>
-
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Report detail</Text>
-            {!selectedReport ? (
-              <Text style={styles.description}>Select a report to view details.</Text>
-            ) : (
-              <>
-                <Text style={styles.postName}>{selectedReport.categoryLabel} — {selectedReport.reportedName}</Text>
-                <Text style={styles.moderationQuote}>"{selectedReport.details}"</Text>
-                <Text style={styles.postMeta}>Status: {selectedReport.status}</Text>
-                {selectedReport.rideContext ? (
-                  <>
-                    <Text style={styles.sectionLabel}>Ride context</Text>
-                    <Text>
-                      {selectedReport.rideContext.startPoint} {"->"} {selectedReport.rideContext.endPoint}
-                    </Text>
-                    <Text style={styles.postMeta}>{selectedReport.rideContext.vehicleType}</Text>
-                    <Text style={styles.postMeta}>Host: {selectedReport.rideContext.riderName}</Text>
-                  </>
-                ) : (
-                  <Text style={styles.postMeta}>No linked ride details.</Text>
-                )}
-                <View style={styles.quickRow}>
-                  <View style={styles.moderationActionFlex}>
-                    <AppButton
-                      title={
-                        isUpdatingStatus
-                          ? "Updating..."
-                          : selectedReport.status === "resolved"
-                            ? "Mark unresolved"
-                            : "Mark resolved"
-                      }
-                      onPress={() => void onToggleStatus()}
-                      disabled={isUpdatingStatus}
-                      variant="secondary"
-                    />
-                  </View>
-                </View>
-              </>
             )}
           </View>
         </ScrollView>

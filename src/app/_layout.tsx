@@ -23,8 +23,8 @@ ThemedTextInput.defaultProps.style = [
 
 function AppNavigator() {
   const [fontsLoaded] = useFonts({
-    GoogleSansFlexMedium: require("C:\\Users\\rish9\\Documents\\noru\\assets\\fonts\\Google_Sans_Flex\\static\\GoogleSansFlex_24pt-Medium.ttf"),
-    GoogleSansFlexBold: require("C:\\Users\\rish9\\Documents\\noru\\assets\\fonts\\Google_Sans_Flex\\static\\GoogleSansFlex_24pt-Bold.ttf"),
+    GoogleSansFlexMedium: require("../../assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Medium.ttf"),
+    GoogleSansFlexBold: require("../../assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Bold.ttf"),
   });
   const { colors } = useAppTheme();
 
@@ -41,7 +41,7 @@ function AppNavigator() {
         screenOptions={{
           headerTintColor: colors.headerTint,
           headerStyle: { backgroundColor: colors.headerBackground },
-          headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "IBMPlexSansBold" },
+          headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "GoogleSansFlexBold" },
           headerTransparent: true,
           headerShadowVisible: false,
           headerRight: () => <HeaderProfileActions />,
@@ -53,6 +53,7 @@ function AppNavigator() {
         <Stack.Screen name="feedback" options={{ title: "Feedback" }} />
         <Stack.Screen name="report" options={{ title: "Report user" }} />
         <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
+        <Stack.Screen name="moderation/[reportId]" options={{ title: "Report detail" }} />
         <Stack.Screen name="profile" options={{ title: "Profile" }} />
       </Stack>
     </ConvexAuthProvider>
@@ -68,3 +69,5 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+
