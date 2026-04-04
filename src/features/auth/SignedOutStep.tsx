@@ -3,9 +3,8 @@ import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
-import { Alert, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 
-import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 
 const OAUTH_VERIFIER_KEY = "__convexAuthOAuthVerifier_noru";
@@ -52,16 +51,42 @@ export function SignedOutStep() {
 
   return (
     <View style={styles.centeredWrap}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Trusted campus rides</Text>
-        <Text style={styles.description}>
-          Sign in with your university account to continue.
-        </Text>
-        <AppButton
-          title={isBusy ? "Connecting to Microsoft Entra..." : "Login with University mail"}
+      <View style={styles.signInCard}>
+        <View style={styles.signInHeader}>
+          <Text style={styles.signInBrand}>noru</Text>
+          <Text style={styles.signInSubBrand}>campus ridesharing</Text>
+        </View>
+
+        <Text style={styles.signInHeadline}>Sign in with your university account to get started</Text>
+
+        <Pressable
           onPress={() => void startEntraSignIn()}
           disabled={isBusy}
-        />
+          style={({ pressed }) => [
+            styles.signInMicrosoftButton,
+            pressed && !isBusy && styles.buttonPressed,
+            isBusy && styles.buttonDisabled,
+          ]}>
+          <View style={styles.signInMicrosoftIcon}>
+            <View style={styles.signInMicrosoftRow}>
+              <View style={[styles.signInMicrosoftTile, styles.signInMicrosoftTileRed]} />
+              <View style={[styles.signInMicrosoftTile, styles.signInMicrosoftTileGreen]} />
+            </View>
+            <View style={styles.signInMicrosoftRow}>
+              <View style={[styles.signInMicrosoftTile, styles.signInMicrosoftTileBlue]} />
+              <View style={[styles.signInMicrosoftTile, styles.signInMicrosoftTileYellow]} />
+            </View>
+          </View>
+          <Text style={styles.signInMicrosoftButtonText}>
+            {isBusy ? "Connecting to Microsoft..." : "Continue with Microsoft"}
+          </Text>
+        </Pressable>
+
+        <Text style={styles.signInRestriction}>Restricted to @amrita.edu accounts</Text>
+
+        <View style={styles.signInDivider} />
+
+        <Text style={styles.signInLegalText}>By continuing, you agree to our terms and privacy policy</Text>
       </View>
     </View>
   );
