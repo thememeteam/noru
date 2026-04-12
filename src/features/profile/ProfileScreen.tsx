@@ -2,11 +2,12 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useMemo } from "react";
-import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
+import { deriveDisplayName, getAvatarInitial } from "../../lib/userDisplay";
 import { VEHICLE_LABELS } from "../rides/constants";
 import { useAppStyles } from "../theme/AppTheme";
 
@@ -60,7 +61,7 @@ export function ProfileScreen() {
   if (onboardingState === undefined) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#b50246" />
+        <ActivityIndicator size="large" color="#1E6CCC" />
       </View>
     );
   }
@@ -78,11 +79,8 @@ export function ProfileScreen() {
     );
   }
 
-  const displayName =
-    onboardingState.displayName?.trim() ||
-    onboardingState.universityEmail?.split("@")[0] ||
-    "Student";
-  const avatarInitial = displayName.charAt(0).toUpperCase() || "U";
+  const displayName = deriveDisplayName(onboardingState.displayName, onboardingState.universityEmail);
+  const avatarInitial = getAvatarInitial(displayName);
 
   return (
     <View style={styles.screenContainer}>
@@ -115,7 +113,7 @@ export function ProfileScreen() {
               <View style={styles.postList}>
                 {pastRides.map((item) => (
                   <View key={item.id} style={styles.postItem}>
-                    <Text>
+                    <Text style={styles.postName}>
                       {item.startPoint} {"➡️"} {item.endPoint}
                     </Text>
                     <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]}</Text>
@@ -146,7 +144,19 @@ export function ProfileScreen() {
                 variant="secondary"
               />
             ) : null}
-            <AppButton title="Sign out" onPress={() => void onSignOut()} variant="danger" />
+            <Pressable
+              onPress={() => void onSignOut()}
+              style={({ pressed }) => [
+                styles.buttonBase,
+                {
+                  backgroundColor: "#A83856",
+                  borderWidth: 1,
+                  borderColor: "#C85A77",
+                },
+                pressed && styles.buttonPressed,
+              ]}>
+              <Text style={[styles.buttonText, { color: "#FFE8EE" }]}>Sign out</Text>
+            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>

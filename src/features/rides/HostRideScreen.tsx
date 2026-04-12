@@ -61,7 +61,7 @@ export function HostRideScreen() {
   if (onboarding === undefined || !onboarding?.isCompleted) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#b50246" />
+        <ActivityIndicator size="large" color="#1E6CCC" />
       </View>
     );
   }

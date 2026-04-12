@@ -84,7 +84,7 @@ export function FeedbackScreen() {
             <Text style={styles.title}>Ride feedback</Text>
             {feedbackTargets === undefined ? (
               <View style={styles.loadingWrap}>
-                <ActivityIndicator size="small" color="#b50246" />
+                <ActivityIndicator size="small" color="#1E6CCC" />
               </View>
             ) : feedbackTargets.targets.length === 0 ? (
               <Text style={styles.description}>No users to rate for this ride.</Text>

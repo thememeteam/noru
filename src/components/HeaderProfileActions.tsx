@@ -4,12 +4,12 @@ import React from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 import { api } from "../../convex/_generated/api";
+import { deriveDisplayName, getAvatarInitial } from "../lib/userDisplay";
 
 export function HeaderProfileActions() {
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
-  const displayName =
-    onboardingState?.displayName?.trim() || onboardingState?.universityEmail?.trim() || "User";
-  const avatarInitial = displayName.charAt(0).toUpperCase() || "U";
+  const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
+  const avatarInitial = getAvatarInitial(displayName);
 
   if (!onboardingState?.isAuthenticated) {
     return null;
@@ -26,7 +26,7 @@ export function HeaderProfileActions() {
               height: 28,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: "#F9A8D4",
+              borderColor: "#60A5FA",
             }}
           />
         ) : (
@@ -36,12 +36,12 @@ export function HeaderProfileActions() {
               height: 28,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: "#F9A8D4",
-              backgroundColor: "#FCE7F3",
+              borderColor: "#60A5FA",
+              backgroundColor: "#1F3654",
               alignItems: "center",
               justifyContent: "center",
             }}>
-            <Text style={{ color: "#9D174D", fontWeight: "700", fontSize: 12 }}>
+            <Text style={{ color: "#DBEAFE", fontWeight: "700", fontSize: 12 }}>
               {avatarInitial}
             </Text>
           </View>

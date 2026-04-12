@@ -183,12 +183,23 @@ export function ReportUserScreen() {
             />
             <Text style={styles.postMeta}>Minimum 8 characters.</Text>
 
-            <AppButton
-              title={isSubmitting ? "Submitting..." : "Submit report"}
+            <Pressable
               onPress={() => void onSubmit()}
               disabled={!canSubmit}
-              variant="danger"
-            />
+              style={({ pressed }) => [
+                styles.buttonBase,
+                {
+                  backgroundColor: "#F5E4E8",
+                  borderWidth: 1,
+                  borderColor: "#E3A7B5",
+                },
+                !canSubmit && styles.buttonDisabled,
+                pressed && canSubmit && styles.buttonPressed,
+              ]}>
+              <Text style={[styles.buttonText, { color: "#8D2E47" }]}>
+                {isSubmitting ? "Submitting..." : "Submit report"}
+              </Text>
+            </Pressable>
           </View>
         </ScrollView>
       </SafeAreaView>

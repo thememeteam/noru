@@ -73,7 +73,7 @@ export function FaceCaptureStep() {
   };
 
   if (onboarding === undefined) {
-    return <ActivityIndicator size="large" color="#b50246" />;
+    return <ActivityIndicator size="large" color="#1E6CCC" />;
   }
 
   if (isCompleted) {

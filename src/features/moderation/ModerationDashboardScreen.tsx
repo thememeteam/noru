@@ -26,7 +26,7 @@ export function ModerationDashboardScreen() {
   if (access === undefined || dashboard === undefined) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#b50246" />
+        <ActivityIndicator size="large" color="#1E6CCC" />
       </View>
     );
   }

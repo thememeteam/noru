@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo } from "react";
 import type { PropsWithChildren } from "react";
 
-import { lightStyleOverrides, styles as darkStyles } from "../styles";
+import { styles as darkStyles } from "../styles";
 
 type AppThemeContextValue = {
   styles: typeof darkStyles;
@@ -15,25 +15,15 @@ type AppThemeContextValue = {
 
 const AppThemeContext = createContext<AppThemeContextValue | null>(null);
 
-function buildLightStyles() {
-  const merged: Record<string, unknown> = { ...darkStyles };
-  for (const [key, value] of Object.entries(lightStyleOverrides)) {
-    const darkValue = merged[key];
-    merged[key] = [darkValue, value];
-  }
-
-  return merged as typeof darkStyles;
-}
-
 export function AppThemeProvider({ children }: PropsWithChildren) {
   const value = useMemo<AppThemeContextValue>(() => {
     return {
-      styles: buildLightStyles(),
+      styles: darkStyles,
       colors: {
-        headerTint: "#111827",
-        headerBackground: "#FFFFFF",
-        contentBackground: "#F4F6FB",
-        activityIndicator: "#b50246",
+        headerTint: "#F3F4F6",
+        headerBackground: "#2E2E2E",
+        contentBackground: "#2E2E2E",
+        activityIndicator: "#1E6CCC",
       },
     };
   }, []);

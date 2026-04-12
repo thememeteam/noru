@@ -1,5 +1,6 @@
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { useFonts } from "expo-font";
+import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import React from "react";
 import { Text, TextInput } from "react-native";
@@ -42,10 +43,10 @@ function AppNavigator() {
           headerTintColor: colors.headerTint,
           headerStyle: { backgroundColor: colors.headerBackground },
           headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "GoogleSansFlexBold" },
-          headerTransparent: true,
+          headerTransparent: false,
           headerShadowVisible: false,
           headerRight: () => <HeaderProfileActions />,
-          contentStyle: { backgroundColor: colors.contentBackground, paddingTop: 88 },
+          contentStyle: { backgroundColor: colors.contentBackground },
         }}>
         <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
         <Stack.Screen name="host" options={{ title: "Host a ride" }} />
@@ -54,7 +55,7 @@ function AppNavigator() {
         <Stack.Screen name="report" options={{ title: "Report user" }} />
         <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
         <Stack.Screen name="moderation/[reportId]" options={{ title: "Report detail" }} />
-        <Stack.Screen name="profile" options={{ title: "Profile" }} />
+        <Stack.Screen name="profile" options={{ title: "Profile", headerRight: () => null }} />
       </Stack>
     </ConvexAuthProvider>
   );
@@ -64,6 +65,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
+        <StatusBar style="light" backgroundColor="#2E2E2E" translucent={false} />
         <AppNavigator />
       </AppThemeProvider>
     </SafeAreaProvider>

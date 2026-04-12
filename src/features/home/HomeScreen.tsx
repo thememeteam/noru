@@ -15,7 +15,7 @@ export function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <AuthLoading>
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color="#b50246" />
+            <ActivityIndicator size="large" color="#1E6CCC" />
           </View>
         </AuthLoading>
 
