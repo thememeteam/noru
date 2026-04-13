@@ -50,27 +50,25 @@ function AppNavigator() {
       client={convex}
       storage={convexAuthTokenStorage}
       storageNamespace="noru">
-      <View style={{ flex: 1, backgroundColor: colors.contentBackground }}>
-        <Stack
-          screenOptions={{
-            headerTintColor: colors.headerTint,
-            headerStyle: { backgroundColor: colors.headerBackground },
-            headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "InterSemiBold" },
-            headerTransparent: false,
-            headerShadowVisible: false,
-            headerRight: () => <HeaderProfileActions />,
-            contentStyle: { backgroundColor: colors.contentBackground },
-          }}>
-          <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
-          <Stack.Screen name="host" options={{ title: "Host a ride" }} />
-          <Stack.Screen name="waiting" options={{ title: "Waiting room" }} />
-          <Stack.Screen name="feedback" options={{ title: "Feedback" }} />
-          <Stack.Screen name="report" options={{ title: "Report user" }} />
-          <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
-          <Stack.Screen name="moderation/[reportId]" options={{ title: "Report detail" }} />
-          <Stack.Screen name="profile" options={{ title: "Profile", headerRight: () => null }} />
-        </Stack>
-      </View>
+      <Stack
+        screenOptions={{
+          headerTintColor: colors.headerTint,
+          headerStyle: { backgroundColor: colors.headerBackground },
+          headerTitleStyle: { fontWeight: "600", color: colors.headerTint, fontFamily: "GoogleSansFlexBold" },
+          headerTransparent: false,
+          headerShadowVisible: false,
+          headerRight: () => <HeaderProfileActions />,
+          contentStyle: { backgroundColor: colors.contentBackground },
+        }}>
+        <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
+        <Stack.Screen name="host" options={{ title: "Host a ride" }} />
+        <Stack.Screen name="waiting" options={{ title: "Waiting room" }} />
+        <Stack.Screen name="feedback" options={{ title: "Feedback" }} />
+        <Stack.Screen name="report" options={{ title: "Report user" }} />
+        <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
+        <Stack.Screen name="moderation/[reportId]" options={{ title: "Report detail" }} />
+        <Stack.Screen name="profile" options={{ title: "Profile", headerRight: () => null }} />
+      </Stack>
     </ConvexAuthProvider>
     </ThemeProvider>
   );

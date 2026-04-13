@@ -93,6 +93,7 @@ export function HostRideScreen() {
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
+<<<<<<< HEAD
         <ScrollView contentContainerStyle={styles.boardContent} keyboardShouldPersistTaps="handled">
 
           {/* From (pickup) */}
@@ -108,6 +109,22 @@ export function HostRideScreen() {
           {/* To (destination) */}
           <Text style={hostStyles.fieldLabel}>To (destination)</Text>
           <View style={hostStyles.destinationRow}>
+=======
+        <ScrollView contentContainerStyle={styles.boardContent}>
+          <View style={styles.card}>
+            <Text style={styles.title}>Post a ride</Text>
+
+            <Text style={hostStyles.fieldLabel}>From (pickup)</Text>
+            <TextInput
+              style={styles.input}
+              value={startPoint}
+              onChangeText={setStartPoint}
+              placeholder="Start point"
+              placeholderTextColor="#7B879C"
+            />
+
+            <Text style={hostStyles.fieldLabel}>To (destination)</Text>
+>>>>>>> origin/main
             <TextInput
               style={[styles.input, hostStyles.destinationInput]}
               value={endPoint}
@@ -115,6 +132,53 @@ export function HostRideScreen() {
               placeholder="Enter destination"
               placeholderTextColor="#7B879C"
             />
+<<<<<<< HEAD
+=======
+
+            <AppButton title="Swap source / destination" onPress={swapPoints} variant="secondary" />
+
+            <Text style={hostStyles.fieldLabel}>Departure time</Text>
+            <View style={hostStyles.deadChipRow}>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>8:30 AM</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>9:00 AM</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Custom</Text></Pressable>
+            </View>
+
+            <Text style={hostStyles.fieldLabel}>Vehicle type</Text>
+            <View style={styles.vehicleRow}>
+              {VEHICLE_OPTIONS.map((option) => {
+                const isSelected = option === vehicleType;
+                return (
+                  <Pressable
+                    key={option}
+                    style={[styles.vehicleChip, isSelected && styles.vehicleChipSelected]}
+                    onPress={() => setVehicleType(option)}>
+                    <Text style={[styles.vehicleChipText, isSelected && styles.vehicleChipTextSelected]}>
+                      {VEHICLE_LABELS[option]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            <Text style={hostStyles.fieldLabel}>Ride preferences</Text>
+            <View style={hostStyles.deadChipRow}>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Women only</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No talking</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No luggage</Text></Pressable>
+            </View>
+
+            <View style={hostStyles.fareRow}>
+              <Text style={styles.postMeta}>Suggested fare</Text>
+              <Text style={hostStyles.fareValue}>{vehicleType === "cab" ? "60" : "45"} / person</Text>
+            </View>
+
+            <AppButton
+              title={isCreating ? "Posting..." : "Post ride"}
+              onPress={() => void onCreate()}
+              disabled={!canCreate}
+            />
+>>>>>>> origin/main
           </View>
 
           {/* Departure time */}
@@ -221,6 +285,7 @@ export function HostRideScreen() {
 
 const hostStyles = StyleSheet.create({
   fieldLabel: {
+<<<<<<< HEAD
     fontSize: 14,
     color: "#9CA3AF",
     fontFamily: "InterMedium",
@@ -346,5 +411,44 @@ const hostStyles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 17,
     fontFamily: "InterBold",
+=======
+    fontSize: 13,
+    color: "#B8C0CC",
+    letterSpacing: 0.4,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  deadChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  deadChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#5B6371",
+    backgroundColor: "#2A2D33",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  deadChipText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  fareRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  fareValue: {
+    color: "#E8F5E1",
+    backgroundColor: "#335F2D",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 12,
+    fontFamily: "GoogleSansFlexBold",
+>>>>>>> origin/main
   },
 });

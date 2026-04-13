@@ -9,7 +9,12 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 
-const STAR_VALUES = [1, 2, 3, 4, 5] as const;
+const FEEDBACK_TAGS: Array<{ label: string; rating: number }> = [
+  { label: "Punctual", rating: 5 },
+  { label: "Good music", rating: 4 },
+  { label: "Friendly", rating: 4 },
+  { label: "Smooth ride", rating: 5 },
+];
 
 export function FeedbackScreen() {
   const styles = useAppStyles();
@@ -22,6 +27,7 @@ export function FeedbackScreen() {
   const submitRideUserFeedback = useMutation(api.rides.submitRideUserFeedback);
 
   const [ratingsByUser, setRatingsByUser] = useState<Record<string, number>>({});
+  const [selectedTagByUser, setSelectedTagByUser] = useState<Record<string, string>>({});
   const [elseByUser, setElseByUser] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,10 +39,22 @@ export function FeedbackScreen() {
     return feedbackTargets.targets.every((target) => (ratingsByUser[String(target.userId)] ?? 0) > 0);
   }, [feedbackTargets, isSubmitting, ratingsByUser]);
 
-  const onStarPress = (userId: string, value: number) => {
+  const onTagPress = (userId: string, label: string, rating: number) => {
+    const isSameTag = selectedTagByUser[userId] === label;
+
+    setSelectedTagByUser((prev) => {
+      const next = { ...prev };
+      if (isSameTag) {
+        delete next[userId];
+      } else {
+        next[userId] = label;
+      }
+      return next;
+    });
+
     setRatingsByUser((prev) => ({
       ...prev,
-      [userId]: prev[userId] === value ? 0 : value,
+      [userId]: isSameTag ? 0 : rating,
     }));
   };
 
@@ -90,10 +108,10 @@ export function FeedbackScreen() {
               <Text style={styles.description}>No users to rate for this ride.</Text>
             ) : (
               <>
-                <Text style={styles.description}>Rate each user from this completed ride.</Text>
+                <Text style={styles.description}>Share your feedback with each participant.</Text>
                 {feedbackTargets.targets.map((target) => {
                   const key = String(target.userId);
-                  const selectedRating = ratingsByUser[key] ?? target.existingRating ?? 0;
+                  const selectedTag = selectedTagByUser[key];
 
                   return (
                     <View key={key} style={styles.postItem}>
@@ -111,30 +129,33 @@ export function FeedbackScreen() {
                         </View>
                       </View>
 
-                      <Text style={styles.sectionLabel}>Rating</Text>
-                      <View style={styles.starRow}>
-                        {STAR_VALUES.map((value) => {
-                          const isActive = value <= selectedRating;
+                      <Text style={feedbackStyles.questionLabel}>What went well?</Text>
+                      <View style={styles.quickRow}>
+                        {FEEDBACK_TAGS.map((tag) => {
+                          const isActive = selectedTag === tag.label;
                           return (
                             <Pressable
-                              key={`${key}-${value}`}
-                              style={[styles.starButton, isActive && styles.starButtonActive]}
-                              onPress={() => onStarPress(key, value)}>
-                              <Text style={[styles.starText, isActive && styles.starTextActive]}>★</Text>
+                              key={`${key}-${tag.label}`}
+                              style={[styles.vehicleChip, isActive && styles.vehicleChipSelected]}
+                              onPress={() => onTagPress(key, tag.label, tag.rating)}>
+                              <Text style={[styles.vehicleChipText, isActive && styles.vehicleChipTextSelected]}>{tag.label}</Text>
                             </Pressable>
                           );
                         })}
                       </View>
 
+                      <Text style={styles.sectionLabel}>Add a note (optional)</Text>
                       <TextInput
                         style={[styles.input, styles.feedbackTextArea]}
                         value={elseByUser[key] ?? ""}
                         onChangeText={(value) => setElseByUser((prev) => ({ ...prev, [key]: value }))}
-                        placeholder="Anything else?"
+                        placeholder="e.g. always on time, easy to coordinate..."
                         placeholderTextColor="#7B879C"
                         multiline
                         textAlignVertical="top"
                       />
+
+                      <Text style={styles.postMeta}>Safety concern? (Private)</Text>
                     </View>
                   );
                 })}
@@ -152,3 +173,11 @@ export function FeedbackScreen() {
     </View>
   );
 }
+
+const feedbackStyles = {
+  questionLabel: {
+    fontSize: 14,
+    color: "#D1D5DB",
+    fontFamily: "GoogleSansFlexBold",
+  },
+} as const;

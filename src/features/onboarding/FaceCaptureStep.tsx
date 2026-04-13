@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "convex/react";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as FileSystem from "expo-file-system/legacy";
 import React, { useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Image, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -20,6 +20,7 @@ export function FaceCaptureStep() {
   const cameraRef = useRef<CameraView | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const isCompleted = onboarding?.isCompleted ?? false;
   const email = onboarding?.universityEmail;
@@ -95,26 +96,42 @@ export function FaceCaptureStep() {
   return (
     <ScrollView contentContainerStyle={styles.boardContent}>
       <View style={styles.card}>
-        <Text style={styles.title}>Verify your identity</Text>
-        <Text style={styles.description}>Logged in as {email ?? "your university account"}.</Text>
+        <Text style={styles.sectionLabel}>Complete your profile</Text>
+        <Text style={styles.postName}>Hello, {email?.split("@")[0] ?? "Student"}</Text>
+        <Text style={styles.postMeta}>{email ?? "university email"}</Text>
+        <Text style={styles.description}>One last step. Capture a profile photo so other students can recognize you.</Text>
 
-        {!photoUri ? (
-          <View style={styles.cameraWrap}>
-            <CameraView ref={cameraRef} facing="front" style={styles.camera} />
-          </View>
+        {!isCameraOpen && !photoUri ? (
+          <>
+            <View style={onboardingStyles.cameraIconWrap}>
+              <Text style={onboardingStyles.cameraIcon}>⌾</Text>
+            </View>
+            <Text style={styles.postMeta}>Must be captured on camera - no uploads.</Text>
+            <Pressable
+              style={({ pressed }) => [onboardingStyles.openCameraButton, pressed && styles.buttonPressed]}
+              onPress={() => setIsCameraOpen(true)}>
+              <Text style={onboardingStyles.openCameraButtonText}>Open camera</Text>
+            </Pressable>
+          </>
+        ) : !photoUri ? (
+          <>
+            <View style={styles.cameraWrap}>
+              <CameraView ref={cameraRef} facing="front" style={styles.camera} />
+            </View>
+            <View style={styles.buttonRow}>
+              <AppButton title="Capture face photo" onPress={() => void captureFace()} />
+              <AppButton title="Close camera" onPress={() => setIsCameraOpen(false)} variant="secondary" />
+            </View>
+          </>
         ) : (
-          <Image source={{ uri: photoUri }} style={styles.camera} />
-        )}
-
-        <View style={styles.buttonRow}>
-          {!photoUri ? (
-            <AppButton title="Capture face photo" onPress={() => void captureFace()} />
-          ) : (
-            <>
+          <>
+            <Image source={{ uri: photoUri }} style={styles.camera} />
+            <View style={styles.buttonRow}>
               <AppButton
                 title="Retake"
                 onPress={() => {
                   setPhotoUri(null);
+                  setIsCameraOpen(true);
                 }}
                 variant="secondary"
               />
@@ -123,10 +140,41 @@ export function FaceCaptureStep() {
                 onPress={() => void uploadAndComplete()}
                 disabled={!canSubmit}
               />
-            </>
-          )}
-        </View>
+            </View>
+          </>
+        )}
       </View>
     </ScrollView>
   );
 }
+
+const onboardingStyles = StyleSheet.create({
+  cameraIconWrap: {
+    alignSelf: "center",
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 1,
+    borderColor: "#5B6371",
+    backgroundColor: "#2A2D33",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cameraIcon: {
+    color: "#D1D5DB",
+    fontSize: 28,
+    lineHeight: 30,
+  },
+  openCameraButton: {
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: "#1E6CCC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  openCameraButtonText: {
+    color: "#EAF3FF",
+    fontSize: 16,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+});
