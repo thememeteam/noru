@@ -31,6 +31,7 @@ export function WaitingRoomScreen() {
   );
 
   const [stoppingRideId, setStoppingRideId] = useState<string | null>(null);
+  const [cancellingRideId, setCancellingRideId] = useState<string | null>(null);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [isLeaving, setIsLeaving] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{
@@ -82,11 +83,26 @@ export function WaitingRoomScreen() {
       router.replace({ pathname: "/feedback", params: { ridePostId: id } });
     } catch (error) {
       Alert.alert(
-        "Could not stop ride",
+        "Could not end ride",
         error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
       setStoppingRideId(null);
+    }
+  };
+
+  const onCancelRide = async (id: string) => {
+    try {
+      setCancellingRideId(id);
+      await stopRidePost({ ridePostId: id as Id<"ridePosts"> });
+      router.replace("/");
+    } catch (error) {
+      Alert.alert(
+        "Could not cancel ride",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    } finally {
+      setCancellingRideId(null);
     }
   };
 
@@ -213,18 +229,34 @@ export function WaitingRoomScreen() {
                   </View>
                 )}
 
-                <Pressable
-                  style={({ pressed }) => [
-                    waitingStyles.stopRideButton,
-                    stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
-                    pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
-                  ]}
-                  onPress={() => void onStopRide(hostedRideData.ridePost._id)}
-                  disabled={stoppingRideId === hostedRideData.ridePost._id}>
-                  <Text style={waitingStyles.stopRideButtonText}>
-                    {stoppingRideId === hostedRideData.ridePost._id ? "Stopping..." : "Cancel ride"}
-                  </Text>
-                </Pressable>
+                <View style={waitingStyles.hostActionRow}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      waitingStyles.stopRideButton,
+                      waitingStyles.cancelRideButton,
+                      cancellingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
+                      pressed && cancellingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
+                    ]}
+                    onPress={() => void onCancelRide(hostedRideData.ridePost._id)}
+                    disabled={cancellingRideId === hostedRideData.ridePost._id || stoppingRideId === hostedRideData.ridePost._id}>
+                    <Text style={waitingStyles.cancelRideButtonText}>
+                      {cancellingRideId === hostedRideData.ridePost._id ? "Cancelling..." : "Cancel ride"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      waitingStyles.stopRideButton,
+                      waitingStyles.endRideButton,
+                      stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
+                      pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
+                    ]}
+                    onPress={() => void onStopRide(hostedRideData.ridePost._id)}
+                    disabled={stoppingRideId === hostedRideData.ridePost._id || cancellingRideId === hostedRideData.ridePost._id}>
+                    <Text style={waitingStyles.stopRideButtonText}>
+                      {stoppingRideId === hostedRideData.ridePost._id ? "Ending..." : "End ride"}
+                    </Text>
+                  </Pressable>
+                </View>
               </>
             ) : joinedRideData ? (
               <>
@@ -411,7 +443,7 @@ const waitingStyles = StyleSheet.create({
   inlineActionButtonText: {
     color: "#EAF3FF",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   inlineActionButtonDisabled: {
     opacity: 0.55,
@@ -420,18 +452,36 @@ const waitingStyles = StyleSheet.create({
     minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E3A7B5",
-    backgroundColor: "#F5E4E8",
+    borderColor: "#7F1D1D",
+    backgroundColor: "#3F1D1D",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 2,
   },
   stopRideButtonText: {
-    color: "#8D2E47",
+    color: "#FECACA",
     fontSize: 17,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   stopRideButtonDisabled: {
     opacity: 0.6,
+  },
+  hostActionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 2,
+  },
+  cancelRideButton: {
+    flex: 1,
+    borderColor: "#374151",
+    backgroundColor: "#2A2D33",
+  },
+  cancelRideButtonText: {
+    color: "#9CA3AF",
+    fontSize: 17,
+    fontFamily: "InterMedium",
+  },
+  endRideButton: {
+    flex: 1,
   },
 });

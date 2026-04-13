@@ -136,8 +136,9 @@ const ridePickStyles = StyleSheet.create({
     backgroundColor: "#2E2E2E",
   },
   boardContent: {
-    paddingTop: 14,
+    paddingTop: 10,
     paddingBottom: 96,
+    gap: 14,
   },
   greetingWrap: {
     width: "100%",
@@ -148,13 +149,13 @@ const ridePickStyles = StyleSheet.create({
   greetingSmall: {
     color: "#C7CDD9",
     fontSize: 18,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   greetingName: {
     color: "#F3F4F6",
     fontSize: 34,
     lineHeight: 38,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   card: {
     backgroundColor: "#2E2E2E",
@@ -182,22 +183,22 @@ const ridePickStyles = StyleSheet.create({
     color: "#E5E7EB",
     fontSize: 18,
     lineHeight: 24,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   metaText: {
     color: "#C7CDD9",
   },
   badgeOpen: {
-    backgroundColor: "#E5F7D9",
+    backgroundColor: "#052E16",
   },
   badgeFull: {
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "#3F1D1D",
   },
   badgeTextOpen: {
-    color: "#335F2D",
+    color: "#86EFAC",
   },
   badgeTextFull: {
-    color: "#B91C1C",
+    color: "#FCA5A5",
   },
   actionButton: {
     minHeight: 42,
@@ -214,7 +215,7 @@ const ridePickStyles = StyleSheet.create({
   actionButtonText: {
     color: "#EAF3FF",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   buttonPressed: {
     opacity: 0.88,

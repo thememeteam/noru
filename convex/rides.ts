@@ -174,6 +174,9 @@ export const createRidePost = mutation({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
+    capacity: v.optional(v.number()),
+    departureTime: v.optional(v.string()),
+    preferences: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -189,7 +192,7 @@ export const createRidePost = mutation({
 
     const user = await ctx.db.get(userId);
     const riderName = user?.name?.trim() || user?.email?.trim() || "Student";
-    const capacity = VEHICLE_OPTIONS[args.vehicleType].capacity;
+    const capacity = args.capacity !== undefined ? args.capacity : VEHICLE_OPTIONS[args.vehicleType].capacity;
     const joinedCount = 0;
     const isFull = joinedCount >= capacity;
 
@@ -204,6 +207,8 @@ export const createRidePost = mutation({
       isFull,
       isStopped: false,
       createdAt: Date.now(),
+      departureTime: args.departureTime,
+      preferences: args.preferences,
     });
   },
 });

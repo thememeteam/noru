@@ -26,6 +26,8 @@ export default defineSchema({
     isFull: v.boolean(),
     isStopped: v.boolean(),
     createdAt: v.number(),
+    departureTime: v.optional(v.string()),
+    preferences: v.optional(v.array(v.string())),
   })
     .index("by_created_at", ["createdAt"])
     .index("by_user_id", ["userId"]),

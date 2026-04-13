@@ -24,11 +24,10 @@ export const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 900,
     alignSelf: "center",
-    gap: 16,
-    paddingHorizontal: 2,
-    paddingVertical: 16,
-    paddingTop: 6,
-    paddingBottom: 28,
+    gap: 12,
+    paddingHorizontal: 0,
+    paddingTop: 8,
+    paddingBottom: 32,
   },
   pickScreenContainer: {
     flex: 1,
@@ -45,13 +44,13 @@ export const styles = StyleSheet.create({
   homeGreeting: {
     fontSize: 18,
     color: "#9CA3AF",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   homeUserName: {
     fontSize: 34,
     lineHeight: 38,
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeAvatar: {
     width: 52,
@@ -69,7 +68,7 @@ export const styles = StyleSheet.create({
   homeAvatarFallbackText: {
     color: "#1E40AF",
     fontSize: 20,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeHeroCard: {
     width: "100%",
@@ -84,12 +83,12 @@ export const styles = StyleSheet.create({
   homeHeroTitle: {
     color: "#EFF6FF",
     fontSize: 20,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeHeroSubtitle: {
     color: "#DBEAFE",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   homeHeroActionRow: {
     flexDirection: "row",
@@ -114,7 +113,7 @@ export const styles = StyleSheet.create({
   },
   homeHeroActionText: {
     fontSize: 16,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeHeroActionTextPrimary: {
     color: "#1D4ED8",
@@ -128,7 +127,7 @@ export const styles = StyleSheet.create({
     alignSelf: "center",
     color: "#9CA3AF",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     letterSpacing: 0.5,
   },
   homeFilterRow: {
@@ -175,7 +174,7 @@ export const styles = StyleSheet.create({
   homeEmptyStateText: {
     color: "#D1D5DB",
     fontSize: 18,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   homeFilterChip: {
     borderRadius: 999,
@@ -192,11 +191,11 @@ export const styles = StyleSheet.create({
   homeFilterChipText: {
     color: "#CBD5E1",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   homeFilterChipTextActive: {
     color: "#1E3A8A",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeFilterChipMuted: {
     borderRadius: 999,
@@ -210,7 +209,7 @@ export const styles = StyleSheet.create({
   homeFilterChipMutedText: {
     color: "#D1D5DB",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   homePricePill: {
     borderRadius: 999,
@@ -221,7 +220,7 @@ export const styles = StyleSheet.create({
   homePricePillText: {
     color: "#166534",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   homeRequestButton: {
     borderRadius: 12,
@@ -235,20 +234,20 @@ export const styles = StyleSheet.create({
   homeRequestButtonText: {
     color: "#EFF6FF",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   title: {
     fontSize: 30,
     textAlign: "left",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   description: {
     fontSize: 16,
     lineHeight: 22,
     textAlign: "left",
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   card: {
     width: "100%",
@@ -287,20 +286,20 @@ export const styles = StyleSheet.create({
     fontSize: 56,
     lineHeight: 60,
     color: "#F3F4F6",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     letterSpacing: -1.2,
   },
   signInSubBrand: {
     fontSize: 24,
     color: "#C7CDD9",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   signInHeadline: {
     fontSize: 18,
     lineHeight: 30,
     textAlign: "center",
     color: "#E5E7EB",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     paddingHorizontal: 14,
   },
   signInMicrosoftButton: {
@@ -316,7 +315,7 @@ export const styles = StyleSheet.create({
   signInMicrosoftButtonText: {
     color: "#F8FAFC",
     fontSize: 18,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   signInMicrosoftIcon: {
     width: 18,
@@ -347,7 +346,7 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     color: "#9CA3AF",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   signInDivider: {
     height: 1,
@@ -358,7 +357,7 @@ export const styles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 14,
     lineHeight: 21,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     paddingHorizontal: 18,
   },
   cameraWrap: {
@@ -405,7 +404,7 @@ export const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontWeight: "700",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   buttonTextSecondary: {
     color: "#F8FAFC",
@@ -418,16 +417,17 @@ export const styles = StyleSheet.create({
     borderColor: "#5B6371",
     backgroundColor: "#2A2D33",
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    minHeight: 50,
     fontSize: 15,
     color: "#E5E7EB",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   sectionLabel: {
     fontSize: 17,
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   quickRow: {
     flexDirection: "row",
@@ -454,7 +454,7 @@ export const styles = StyleSheet.create({
   vehicleChipText: {
     color: "#CBD5E1",
     fontWeight: "600",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   vehicleChipTextSelected: {
     color: "#DBEAFE",
@@ -478,11 +478,11 @@ export const styles = StyleSheet.create({
   postName: {
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   postMeta: {
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   badge: {
     borderRadius: 999,
@@ -552,13 +552,13 @@ export const styles = StyleSheet.create({
   profileAvatarFallbackText: {
     color: "#DBEAFE",
     fontWeight: "700",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   profileSignOut: {
     color: "#93C5FD",
     fontSize: 12,
     fontWeight: "600",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   profileIdentityRow: {
     flexDirection: "row",
@@ -590,18 +590,18 @@ export const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "700",
     fontSize: 24,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   profileName: {
     fontSize: 18,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   profileEmail: {
     fontSize: 14,
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   starRow: {
     flexDirection: "row",
@@ -653,12 +653,12 @@ export const styles = StyleSheet.create({
     fontSize: 34,
     fontWeight: "700",
     color: "#F8FAFC",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   moderationMetricLabel: {
     fontSize: 14,
     color: "#94A3B8",
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   moderationFilterRow: {
     flexDirection: "row",
@@ -678,7 +678,7 @@ export const styles = StyleSheet.create({
     fontStyle: "italic",
     color: "#CBD5E1",
     lineHeight: 30,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   moderationActionFlex: {
     flex: 1,
@@ -703,7 +703,7 @@ export const styles = StyleSheet.create({
   moderationContextRouteText: {
     color: "#E2E8F0",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   moderationContextRow: {
     flexDirection: "row",
@@ -714,14 +714,14 @@ export const styles = StyleSheet.create({
   moderationContextLabel: {
     color: "#94A3B8",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   moderationContextValue: {
     color: "#F8FAFC",
     fontSize: 14,
     textAlign: "right",
     flexShrink: 1,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   moderationContextDivider: {
     height: 1,
@@ -753,7 +753,7 @@ export const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "700",
     fontSize: 11,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   overlayBackdrop: {
     flex: 1,
@@ -790,7 +790,7 @@ export const styles = StyleSheet.create({
     color: "#DBEAFE",
     fontWeight: "700",
     fontSize: 20,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
 });
 

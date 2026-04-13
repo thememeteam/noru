@@ -31,8 +31,9 @@
         "expo-font",
         {
           "fonts": [
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Medium.ttf",
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Bold.ttf"
+            "./assets/fonts/Inter/static/Inter_18pt-Medium.ttf",
+            "./assets/fonts/Inter/static/Inter_18pt-SemiBold.ttf",
+            "./assets/fonts/Inter/static/Inter_18pt-Bold.ttf"
           ]
         }
       ]

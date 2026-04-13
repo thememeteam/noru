@@ -188,15 +188,11 @@ export function ReportUserScreen() {
               disabled={!canSubmit}
               style={({ pressed }) => [
                 styles.buttonBase,
-                {
-                  backgroundColor: "#F5E4E8",
-                  borderWidth: 1,
-                  borderColor: "#E3A7B5",
-                },
+                styles.buttonDanger,
                 !canSubmit && styles.buttonDisabled,
                 pressed && canSubmit && styles.buttonPressed,
               ]}>
-              <Text style={[styles.buttonText, { color: "#8D2E47" }]}>
+              <Text style={[styles.buttonText, styles.buttonTextDanger]}>
                 {isSubmitting ? "Submitting..." : "Submit report"}
               </Text>
             </Pressable>
