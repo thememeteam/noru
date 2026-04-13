@@ -165,7 +165,7 @@ export function WaitingRoomScreen() {
                   </View>
                 </View>
 
-                <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>PARTICIPANTS</Text>
+                <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>PENDING REQUESTS</Text>
                 {hostedRideData.joinees.length === 0 ? (
                   <Text style={styles.description}>No one has joined yet.</Text>
                 ) : (
@@ -196,22 +196,30 @@ export function WaitingRoomScreen() {
                             <Text style={styles.postMeta}>{joinee.joineeEmail ?? "No email"}</Text>
                           </View>
                         </View>
-                        <Pressable
-                          style={({ pressed }) => [
-                            waitingStyles.inlineActionButton,
-                            removingUserId === joinee.userId && waitingStyles.inlineActionButtonDisabled,
-                            pressed && removingUserId !== joinee.userId && styles.buttonPressed,
-                          ]}
-                          onPress={() => void onRemoveJoinee(String(joinee.userId))}
-                          disabled={removingUserId === joinee.userId}>
-                          <Text style={waitingStyles.inlineActionButtonText}>
-                            {removingUserId === joinee.userId ? "Removing..." : "Remove"}
-                          </Text>
-                        </Pressable>
+                        <View style={waitingStyles.pendingActionRow}>
+                          <Pressable onPress={() => {}} style={waitingStyles.inlineActionButton}>
+                            <Text style={waitingStyles.inlineActionButtonText}>Accept</Text>
+                          </Pressable>
+                          <Pressable
+                            style={({ pressed }) => [
+                              waitingStyles.inlineActionButton,
+                              removingUserId === joinee.userId && waitingStyles.inlineActionButtonDisabled,
+                              pressed && removingUserId !== joinee.userId && styles.buttonPressed,
+                            ]}
+                            onPress={() => void onRemoveJoinee(String(joinee.userId))}
+                            disabled={removingUserId === joinee.userId}>
+                            <Text style={waitingStyles.inlineActionButtonText}>
+                              {removingUserId === joinee.userId ? "Removing..." : "Reject"}
+                            </Text>
+                          </Pressable>
+                        </View>
                       </View>
                     ))}
                   </View>
                 )}
+
+                <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>ACCEPTED</Text>
+                <Text style={styles.postMeta}>Accepted list is not enabled yet in this build.</Text>
 
                 <Pressable
                   style={({ pressed }) => [
@@ -395,6 +403,10 @@ const waitingStyles = StyleSheet.create({
   participantTextWrap: {
     flex: 1,
     gap: 2,
+  },
+  pendingActionRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   inlineActionButton: {
     alignSelf: "flex-start",

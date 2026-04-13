@@ -284,20 +284,20 @@ export const styles = StyleSheet.create({
     gap: 2,
   },
   signInBrand: {
-    fontSize: 56,
-    lineHeight: 60,
+    fontSize: 42,
+    lineHeight: 46,
     color: "#F3F4F6",
     fontFamily: "GoogleSansFlexBold",
     letterSpacing: -1.2,
   },
   signInSubBrand: {
-    fontSize: 24,
+    fontSize: 16,
     color: "#C7CDD9",
     fontFamily: "GoogleSansFlexMedium",
   },
   signInHeadline: {
-    fontSize: 18,
-    lineHeight: 30,
+    fontSize: 17,
+    lineHeight: 27,
     textAlign: "center",
     color: "#E5E7EB",
     fontFamily: "GoogleSansFlexMedium",
@@ -315,7 +315,7 @@ export const styles = StyleSheet.create({
   },
   signInMicrosoftButtonText: {
     color: "#F8FAFC",
-    fontSize: 18,
+    fontSize: 16,
     fontFamily: "GoogleSansFlexBold",
   },
   signInMicrosoftIcon: {

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
@@ -71,10 +71,9 @@ export function HostRideScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.boardContent}>
           <View style={styles.card}>
-            <Text style={styles.title}>Host a ride</Text>
-            <Text style={styles.description}>Create a ride post and wait for students to join.</Text>
+            <Text style={styles.title}>Post a ride</Text>
 
-            <Text style={styles.sectionLabel}>Source</Text>
+            <Text style={hostStyles.fieldLabel}>From (pickup)</Text>
             <TextInput
               style={styles.input}
               value={startPoint}
@@ -83,7 +82,7 @@ export function HostRideScreen() {
               placeholderTextColor="#7B879C"
             />
 
-            <Text style={styles.sectionLabel}>Destination</Text>
+            <Text style={hostStyles.fieldLabel}>To (destination)</Text>
             <TextInput
               style={styles.input}
               value={endPoint}
@@ -94,7 +93,14 @@ export function HostRideScreen() {
 
             <AppButton title="Swap source / destination" onPress={swapPoints} variant="secondary" />
 
-            <Text style={styles.sectionLabel}>Vehicle</Text>
+            <Text style={hostStyles.fieldLabel}>Departure time</Text>
+            <View style={hostStyles.deadChipRow}>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>8:30 AM</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>9:00 AM</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Custom</Text></Pressable>
+            </View>
+
+            <Text style={hostStyles.fieldLabel}>Vehicle type</Text>
             <View style={styles.vehicleRow}>
               {VEHICLE_OPTIONS.map((option) => {
                 const isSelected = option === vehicleType;
@@ -111,8 +117,20 @@ export function HostRideScreen() {
               })}
             </View>
 
+            <Text style={hostStyles.fieldLabel}>Ride preferences</Text>
+            <View style={hostStyles.deadChipRow}>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Women only</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No talking</Text></Pressable>
+              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No luggage</Text></Pressable>
+            </View>
+
+            <View style={hostStyles.fareRow}>
+              <Text style={styles.postMeta}>Suggested fare</Text>
+              <Text style={hostStyles.fareValue}>{vehicleType === "cab" ? "60" : "45"} / person</Text>
+            </View>
+
             <AppButton
-              title={isCreating ? "Creating..." : "Create ride post"}
+              title={isCreating ? "Posting..." : "Post ride"}
               onPress={() => void onCreate()}
               disabled={!canCreate}
             />
@@ -122,3 +140,45 @@ export function HostRideScreen() {
     </View>
   );
 }
+
+const hostStyles = StyleSheet.create({
+  fieldLabel: {
+    fontSize: 13,
+    color: "#B8C0CC",
+    letterSpacing: 0.4,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  deadChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  deadChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#5B6371",
+    backgroundColor: "#2A2D33",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  deadChipText: {
+    color: "#D1D5DB",
+    fontSize: 13,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  fareRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  fareValue: {
+    color: "#E8F5E1",
+    backgroundColor: "#335F2D",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    fontSize: 12,
+    fontFamily: "GoogleSansFlexBold",
+  },
+});

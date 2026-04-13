@@ -50,6 +50,7 @@ function AppNavigator() {
         }}>
         <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
         <Stack.Screen name="host" options={{ title: "Host a ride" }} />
+        <Stack.Screen name="ride-details" options={{ title: "Ride details" }} />
         <Stack.Screen name="waiting" options={{ title: "Waiting room" }} />
         <Stack.Screen name="feedback" options={{ title: "Feedback" }} />
         <Stack.Screen name="report" options={{ title: "Report user" }} />
