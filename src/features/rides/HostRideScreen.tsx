@@ -164,9 +164,6 @@ export function HostRideScreen() {
                 placeholderTextColor="#7B879C"
                 keyboardType="numeric"
               />
-              <View style={hostStyles.suggestedPill}>
-                <Text style={hostStyles.suggestedPillText}>Suggested ₹{suggestedFare}</Text>
-              </View>
             </View>
 
             <AppButton

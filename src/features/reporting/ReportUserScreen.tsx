@@ -46,16 +46,15 @@ export function ReportUserScreen() {
     }
   }, [selectedRidePostId, sharedRides, sharedRidesQuery]);
 
-  const isRideSelectionRequired = selectedReportedUserId !== null && sharedRides.length > 0;
 
   const canSubmit = useMemo(() => {
     return (
       reportedName.trim().length > 0
       && reason.trim().length >= 8
       && !isSubmitting
-      && (!isRideSelectionRequired || Boolean(selectedRidePostId))
+      && Boolean(selectedRidePostId)
     );
-  }, [isSubmitting, isRideSelectionRequired, reason, reportedName, selectedRidePostId]);
+  }, [isSubmitting, reason, reportedName, selectedRidePostId]);
 
   const onSubmit = async () => {
     if (!canSubmit) {
@@ -68,7 +67,7 @@ export function ReportUserScreen() {
         reportedUserId: selectedReportedUserId ? (selectedReportedUserId as Id<"users">) : undefined,
         reportedName: reportedName.trim(),
         reason: reason.trim(),
-        ridePostId: selectedRidePostId ? (selectedRidePostId as Id<"ridePosts">) : undefined,
+        ridePostId: selectedRidePostId as Id<"ridePosts">,
       });
 
       if (stopRideOnSubmit && ridePostId) {
@@ -145,7 +144,7 @@ export function ReportUserScreen() {
                 {sharedRidesQuery === undefined ? (
                   <Text style={styles.postMeta}>Loading shared rides...</Text>
                 ) : sharedRides.length === 0 ? (
-                  <Text style={styles.postMeta}>No shared rides found with this user today.</Text>
+                  <Text style={[styles.postMeta, { color: "#FECACA" }]}>No shared rides found with this user. You can only report someone from a shared ride.</Text>
                 ) : (
                   <View style={styles.postList}>
                     {sharedRides.map((ride) => {
@@ -165,8 +164,8 @@ export function ReportUserScreen() {
                     })}
                   </View>
                 )}
-                {isRideSelectionRequired && !selectedRidePostId ? (
-                  <Text style={styles.postMeta}>Select a ride from the shared rides above.</Text>
+                {sharedRides.length > 0 && !selectedRidePostId ? (
+                  <Text style={[styles.postMeta, { color: "#FECACA" }]}>Select a ride above to continue.</Text>
                 ) : null}
               </>
             ) : null}
@@ -188,15 +187,11 @@ export function ReportUserScreen() {
               disabled={!canSubmit}
               style={({ pressed }) => [
                 styles.buttonBase,
-                {
-                  backgroundColor: "#F5E4E8",
-                  borderWidth: 1,
-                  borderColor: "#E3A7B5",
-                },
+                styles.buttonDanger,
                 !canSubmit && styles.buttonDisabled,
                 pressed && canSubmit && styles.buttonPressed,
               ]}>
-              <Text style={[styles.buttonText, { color: "#8D2E47" }]}>
+              <Text style={[styles.buttonText, styles.buttonTextDanger]}>
                 {isSubmitting ? "Submitting..." : "Submit report"}
               </Text>
             </Pressable>

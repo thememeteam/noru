@@ -85,7 +85,7 @@ export function ProfileScreen() {
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent}>
+        <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.card, profileStyles.centerCard]}>
             <View style={profileStyles.centerIdentityWrap}>
               {onboardingState.profilePhotoUrl ? (
