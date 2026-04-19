@@ -58,12 +58,12 @@ const detailStyles = StyleSheet.create({
   mapTitle: {
     color: "#335F2D",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   mapSubtitle: {
     color: "#335F2D",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   infoRow: {
     flexDirection: "row",
@@ -77,7 +77,7 @@ const detailStyles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   tagChip: {
     borderRadius: 999,
@@ -90,7 +90,7 @@ const detailStyles = StyleSheet.create({
   tagChipText: {
     color: "#1E477A",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   requestButton: {
     minHeight: 44,
@@ -102,6 +102,6 @@ const detailStyles = StyleSheet.create({
   requestButtonText: {
     color: "#EAF3FF",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
 });

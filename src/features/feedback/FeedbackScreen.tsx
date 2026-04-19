@@ -178,6 +178,6 @@ const feedbackStyles = {
   questionLabel: {
     fontSize: 14,
     color: "#D1D5DB",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
 } as const;

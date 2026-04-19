@@ -98,11 +98,7 @@ export function ProfileScreen() {
             </View>
             <Text style={[styles.profileName, profileStyles.centerName]}>{displayName}</Text>
             <Text style={[styles.profileEmail, profileStyles.centerEmail]}>{onboardingState.universityEmail ?? "No email found"}</Text>
-            <View style={styles.quickRow}>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Quiet</Text></Pressable>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Punctual</Text></Pressable>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Friendly</Text></Pressable>
-            </View>
+
           </View>
 
           <View style={styles.card}>
@@ -139,10 +135,6 @@ export function ProfileScreen() {
           </View>
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>Account</Text>
-            <Pressable onPress={() => {}} style={profileStyles.accountRow}>
-              <Text style={styles.postName}>Edit preferences</Text>
-              <Text style={styles.postMeta}>{">"}</Text>
-            </Pressable>
 
             <AppButton title="Report a user" onPress={() => router.push("/report")} variant="secondary" />
             {moderationAccess?.isAdmin ? (
@@ -197,7 +189,7 @@ const profileStyles = StyleSheet.create({
   traitChipText: {
     color: "#1E477A",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   historyRow: {
     flexDirection: "row",
@@ -218,7 +210,7 @@ const profileStyles = StyleSheet.create({
   completedPillText: {
     color: "#335F2D",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   accountRow: {
     borderWidth: 1,

@@ -174,6 +174,8 @@ export const createRidePost = mutation({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
+    departureTime: v.optional(v.string()),
+    fare: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -203,6 +205,8 @@ export const createRidePost = mutation({
       joinedCount,
       isFull,
       isStopped: false,
+      departureTime: args.departureTime,
+      fare: args.fare,
       createdAt: Date.now(),
     });
   },
@@ -700,5 +704,50 @@ export const stopRidePost = mutation({
       isStopped: true,
       isFull: true,
     });
+  },
+});
+
+export const cancelRidePost = mutation({
+  args: {
+    ridePostId: v.id("ridePosts"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ridePost = await ctx.db.get(args.ridePostId);
+    if (!ridePost) {
+      throw new Error("Ride post not found.");
+    }
+
+    if (ridePost.userId !== userId) {
+      throw new Error("You can only cancel your own ride.");
+    }
+
+    await ctx.db.patch(args.ridePostId, {
+      isStopped: true,
+      isCancelled: true,
+      isFull: true,
+    });
+
+    // Notify all joinees that the ride was cancelled
+    const joins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+
+    for (const join of joins) {
+      await ctx.db.insert("userNotifications", {
+        userId: join.userId,
+        title: "Ride cancelled",
+        message: `${ridePost.riderName} cancelled the ride from ${ridePost.startPoint} to ${ridePost.endPoint}.`,
+        type: "rideRemoved",
+        isRead: false,
+        ridePostId: args.ridePostId,
+        createdAt: Date.now(),
+      });
+    }
   },
 });

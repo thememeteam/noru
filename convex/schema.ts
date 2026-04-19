@@ -25,6 +25,9 @@ export default defineSchema({
     joinedCount: v.number(),
     isFull: v.boolean(),
     isStopped: v.boolean(),
+    isCancelled: v.optional(v.boolean()),
+    departureTime: v.optional(v.string()),
+    fare: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_created_at", ["createdAt"])

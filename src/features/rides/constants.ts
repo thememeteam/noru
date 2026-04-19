@@ -1,4 +1,4 @@
-export const COLLEGE_DESTINATION = "College";
+export const COLLEGE_DESTINATION = "Amrita Vishwa Vidyapeetham";
 
 export const VEHICLE_OPTIONS = ["auto", "cab", "ownBike", "ownCar"] as const;
 export type VehicleType = (typeof VEHICLE_OPTIONS)[number];

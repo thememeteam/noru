@@ -71,23 +71,6 @@ export function RidePickScreen() {
         </View>
 
         <Text style={ridePickStyles.sectionTitle}>AVAILABLE RIDES</Text>
-        <View style={ridePickStyles.filterRow}>
-          <Pressable style={[ridePickStyles.filterChip, ridePickStyles.filterChipActive]} onPress={() => {}}>
-            <Text style={[ridePickStyles.filterChipText, ridePickStyles.filterChipTextActive]}>All</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Women only</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>No talking</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Auto</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Cab</Text>
-          </Pressable>
-        </View>
 
         {activeJoinedRide ? (
           <View style={ridePickStyles.rideCard}>
@@ -155,20 +138,7 @@ export function RidePickScreen() {
         )}
       </ScrollView>
 
-      <View style={ridePickStyles.bottomTabBar}>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => {}}>
-          <Text style={[ridePickStyles.tabText, ridePickStyles.tabTextActive]}>Home</Text>
-        </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => {}}>
-          <Text style={ridePickStyles.tabText}>Discover</Text>
-        </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => router.push("/host")}>
-          <Text style={ridePickStyles.tabText}>Post</Text>
-        </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => router.push("/profile")}>
-          <Text style={ridePickStyles.tabText}>Profile</Text>
-        </Pressable>
-      </View>
+
     </View>
   );
 }
@@ -179,7 +149,7 @@ const ridePickStyles = StyleSheet.create({
   },
   boardContent: {
     paddingTop: 10,
-    paddingBottom: 110,
+    paddingBottom: 32,
   },
   greetingWrap: {
     width: "100%",
@@ -190,13 +160,13 @@ const ridePickStyles = StyleSheet.create({
   greetingSmall: {
     color: "#C7CDD9",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   greetingName: {
     color: "#F3F4F6",
     fontSize: 38,
     lineHeight: 42,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   heroCard: {
     width: "100%",
@@ -212,12 +182,12 @@ const ridePickStyles = StyleSheet.create({
   heroTitle: {
     color: "#EFF6FF",
     fontSize: 23,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   heroSubtitle: {
     color: "#DCEBFF",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   heroActionRow: {
     flexDirection: "row",
@@ -243,12 +213,12 @@ const ridePickStyles = StyleSheet.create({
   heroActionPrimaryText: {
     color: "#1F67BC",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   heroActionSecondaryText: {
     color: "#EAF3FF",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   sectionTitle: {
     width: "100%",
@@ -257,7 +227,7 @@ const ridePickStyles = StyleSheet.create({
     color: "#AEB5C0",
     fontSize: 14,
     letterSpacing: 0.6,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     marginBottom: 8,
   },
   filterRow: {
@@ -284,7 +254,7 @@ const ridePickStyles = StyleSheet.create({
   filterChipText: {
     color: "#D1D5DB",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   filterChipTextActive: {
     color: "#1E477A",
@@ -322,18 +292,18 @@ const ridePickStyles = StyleSheet.create({
     color: "#F3F4F6",
     fontSize: 17,
     lineHeight: 22,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     flex: 1,
   },
   rideMeta: {
     color: "#C7CDD9",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   riderMeta: {
     color: "#C7CDD9",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     flexShrink: 1,
   },
   riderBlock: {
@@ -350,7 +320,7 @@ const ridePickStyles = StyleSheet.create({
   pricePillText: {
     color: "#335F2D",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   requestButton: {
     minHeight: 42,
@@ -364,7 +334,7 @@ const ridePickStyles = StyleSheet.create({
   requestButtonText: {
     color: "#EAF3FF",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   detailsLinkButton: {
     alignSelf: "flex-start",
@@ -373,7 +343,7 @@ const ridePickStyles = StyleSheet.create({
   detailsLinkText: {
     color: "#8DB7E8",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     textDecorationLine: "underline",
   },
   buttonPressed: {
@@ -382,31 +352,5 @@ const ridePickStyles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.5,
   },
-  bottomTabBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 68,
-    backgroundColor: "#2A2D33",
-    borderTopWidth: 1,
-    borderTopColor: "#4B5563",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
-  },
-  tabItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 70,
-  },
-  tabText: {
-    color: "#A8B0BD",
-    fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
-  },
-  tabTextActive: {
-    color: "#1E6CCC",
-  },
+
 });
