@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
@@ -9,14 +9,29 @@ import { deriveDisplayName } from "../../lib/userDisplay";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS } from "./constants";
 
+function formatRideTime(rideStartAt?: number | null) {
+  if (!rideStartAt || !Number.isFinite(rideStartAt)) {
+    return null;
+  }
+
+  const date = new Date(rideStartAt);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 export function RidePickScreen() {
   const styles = useAppStyles();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
   const posts = useQuery(api.rides.listJoinableRidePosts) ?? [];
   const activeJoinedRide = useQuery(api.rides.getMyActiveJoinedRide);
   const joinRidePost = useMutation(api.rides.joinRidePost);
+  const scrollRef = useRef<ScrollView>(null);
 
   const [joiningRideId, setJoiningRideId] = useState<string | null>(null);
+  const [discoverTargetY, setDiscoverTargetY] = useState(0);
   const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
   const firstName = displayName.split(" ")[0] || "Student";
   const currentHour = new Date().getHours();
@@ -37,9 +52,13 @@ export function RidePickScreen() {
     }
   };
 
+  const onDiscoverPress = () => {
+    scrollRef.current?.scrollTo({ y: Math.max(0, discoverTargetY - 8), animated: true });
+  };
+
   return (
     <View style={[styles.pickScreenContainer, ridePickStyles.screen]}>
-      <ScrollView contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
+      <ScrollView ref={scrollRef} contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
         <View style={ridePickStyles.greetingWrap}>
           <Text style={ridePickStyles.greetingSmall}>{dayGreeting}</Text>
           <Text style={ridePickStyles.greetingName}>{firstName}</Text>
@@ -70,7 +89,7 @@ export function RidePickScreen() {
           </View>
         </View>
 
-        <Text style={ridePickStyles.sectionTitle}>AVAILABLE RIDES</Text>
+        <Text style={ridePickStyles.sectionTitle} onLayout={(event) => setDiscoverTargetY(event.nativeEvent.layout.y)}>AVAILABLE RIDES</Text>
         <View style={ridePickStyles.filterRow}>
           <Pressable style={[ridePickStyles.filterChip, ridePickStyles.filterChipActive]} onPress={() => {}}>
             <Text style={[ridePickStyles.filterChipText, ridePickStyles.filterChipTextActive]}>All</Text>
@@ -109,16 +128,22 @@ export function RidePickScreen() {
           <View style={styles.postList}>
             {posts.map((post) => {
               const seatsLeft = Math.max(0, post.capacity - post.joinedCount);
+              const pricePerPerson = (post as any).pricePerPerson as number | undefined;
+              const rideStartAt = (post as any).rideStartAt as number | undefined;
+              const timeLabel = formatRideTime(rideStartAt) ?? "8:30 AM";
+              const priceLabel = pricePerPerson && Number.isFinite(pricePerPerson)
+                ? `${pricePerPerson} / person`
+                : `${post.vehicleType === "cab" ? "60" : "45"} est.`;
               return (
                 <View key={post._id} style={ridePickStyles.rideCard}>
                   <View style={ridePickStyles.rideHeaderRow}>
                     <Text style={ridePickStyles.rideRoute}>{post.startPoint} → {post.endPoint}</Text>
                     <View style={ridePickStyles.pricePill}>
-                      <Text style={ridePickStyles.pricePillText}>₹{post.vehicleType === "cab" ? "60" : "45"} est.</Text>
+                      <Text style={ridePickStyles.pricePillText}>{priceLabel}</Text>
                     </View>
                   </View>
 
-                  <Text style={ridePickStyles.rideMeta}>8:30 AM · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left</Text>
+                  <Text style={ridePickStyles.rideMeta}>{timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left</Text>
 
                   <View style={ridePickStyles.rideFooterRow}>
                     <View style={[styles.personRow, ridePickStyles.riderBlock]}>
@@ -159,7 +184,7 @@ export function RidePickScreen() {
         <Pressable style={ridePickStyles.tabItem} onPress={() => {}}>
           <Text style={[ridePickStyles.tabText, ridePickStyles.tabTextActive]}>Home</Text>
         </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => {}}>
+        <Pressable style={ridePickStyles.tabItem} onPress={onDiscoverPress}>
           <Text style={ridePickStyles.tabText}>Discover</Text>
         </Pressable>
         <Pressable style={ridePickStyles.tabItem} onPress={() => router.push("/host")}>
@@ -388,9 +413,9 @@ const ridePickStyles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 68,
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#2E2E2E",
     borderTopWidth: 1,
-    borderTopColor: "#4B5563",
+    borderTopColor: "#5B6371",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",

@@ -23,7 +23,7 @@ export function RideDetailsScreen() {
             <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Departure</Text><Text style={styles.postName}>8:30 AM today</Text></View>
             <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Vehicle</Text><Text style={styles.postName}>Auto (booked by host)</Text></View>
             <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Seats available</Text><Text style={styles.postName}>2 of 3</Text></View>
-            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Suggested fare</Text><Text style={detailStyles.farePill}>₹45 / person</Text></View>
+            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Price per person</Text><Text style={detailStyles.farePill}>45 / person</Text></View>
 
             <Text style={styles.sectionLabel}>Host</Text>
             <View style={styles.postItem}>

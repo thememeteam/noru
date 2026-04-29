@@ -174,6 +174,8 @@ export const createRidePost = mutation({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
+    pricePerPerson: v.number(),
+    rideStartAt: v.number(),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -185,6 +187,14 @@ export const createRidePost = mutation({
     const endPoint = args.endPoint.trim();
     if (!startPoint || !endPoint) {
       throw new Error("Start and end point are required.");
+    }
+
+    if (!Number.isFinite(args.pricePerPerson) || args.pricePerPerson <= 0) {
+      throw new Error("Price per person must be greater than 0.");
+    }
+
+    if (!Number.isFinite(args.rideStartAt) || args.rideStartAt <= 0) {
+      throw new Error("Ride start time is required.");
     }
 
     const user = await ctx.db.get(userId);
@@ -199,6 +209,8 @@ export const createRidePost = mutation({
       startPoint,
       endPoint,
       vehicleType: args.vehicleType,
+      pricePerPerson: args.pricePerPerson,
+      rideStartAt: args.rideStartAt,
       capacity,
       joinedCount,
       isFull,

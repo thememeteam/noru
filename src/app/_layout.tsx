@@ -3,7 +3,7 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import React from "react";
-import { Text, TextInput } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { HeaderProfileActions } from "../components/HeaderProfileActions";
@@ -66,10 +66,20 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-        <StatusBar style="light" backgroundColor="#2E2E2E" translucent={false} />
-        <AppNavigator />
+        <RootContainer />
       </AppThemeProvider>
     </SafeAreaProvider>
+  );
+}
+
+function RootContainer() {
+  const { colors } = useAppTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.contentBackground }}>
+      <StatusBar style="light" backgroundColor={colors.contentBackground} translucent={false} />
+      <AppNavigator />
+    </View>
   );
 }
 

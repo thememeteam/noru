@@ -5,6 +5,7 @@
     "scheme": "noru",
     "version": "1.0.0",
     "orientation": "portrait",
+    "backgroundColor": "#2E2E2E",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {

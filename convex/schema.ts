@@ -21,6 +21,8 @@ export default defineSchema({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
+    pricePerPerson: v.optional(v.number()),
+    rideStartAt: v.optional(v.number()),
     capacity: v.number(),
     joinedCount: v.number(),
     isFull: v.boolean(),

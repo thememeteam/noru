@@ -7,20 +7,49 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
-import { COLLEGE_DESTINATION, VEHICLE_LABELS, VEHICLE_OPTIONS, type VehicleType } from "./constants";
+import { VEHICLE_LABELS, VEHICLE_OPTIONS, type VehicleType } from "./constants";
+
+function parseRideStartAt(timeText: string) {
+  const match = timeText.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) {
+    return null;
+  }
+
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+  if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+    return null;
+  }
+
+  const now = new Date();
+  const rideStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes, 0, 0);
+  return rideStart.getTime();
+}
 
 export function HostRideScreen() {
   const styles = useAppStyles();
   const onboarding = useQuery(api.onboarding.getOnboardingState);
-  const createRidePost = useMutation(api.rides.createRidePost);
+  const createRidePost = useMutation(api.rides.createRidePost) as any;
 
   const [startPoint, setStartPoint] = useState("");
   const [endPoint, setEndPoint] = useState("");
   const [vehicleType, setVehicleType] = useState<VehicleType>("auto");
+  const [pricePerPerson, setPricePerPerson] = useState("");
+  const [rideStartTime, setRideStartTime] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const canCreate = startPoint.trim().length > 0 && endPoint.trim().length > 0 && !isCreating;
-  const isCollegeDestination = endPoint.trim().toLowerCase() === COLLEGE_DESTINATION.toLowerCase();
+  const parsedPrice = Number(pricePerPerson);
+  const parsedRideStartAt = parseRideStartAt(rideStartTime);
+  const canCreate =
+    startPoint.trim().length > 0
+    && endPoint.trim().length > 0
+    && Number.isFinite(parsedPrice)
+    && parsedPrice > 0
+    && parsedRideStartAt !== null
+    && !isCreating;
 
   useEffect(() => {
     if (onboarding && !onboarding.isCompleted) {
@@ -38,10 +67,14 @@ export function HostRideScreen() {
         startPoint,
         endPoint,
         vehicleType,
+        pricePerPerson: parsedPrice,
+        rideStartAt: parsedRideStartAt as number,
       });
       setStartPoint("");
       setEndPoint("");
       setVehicleType("auto");
+      setPricePerPerson("");
+      setRideStartTime("");
       router.replace({ pathname: "/waiting", params: { ridePostId: createdId } });
     } catch (error) {
       Alert.alert(
@@ -93,13 +126,6 @@ export function HostRideScreen() {
 
             <AppButton title="Swap source / destination" onPress={swapPoints} variant="secondary" />
 
-            <Text style={hostStyles.fieldLabel}>Departure time</Text>
-            <View style={hostStyles.deadChipRow}>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>8:30 AM</Text></Pressable>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>9:00 AM</Text></Pressable>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Custom</Text></Pressable>
-            </View>
-
             <Text style={hostStyles.fieldLabel}>Vehicle type</Text>
             <View style={styles.vehicleRow}>
               {VEHICLE_OPTIONS.map((option) => {
@@ -124,10 +150,25 @@ export function HostRideScreen() {
               <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No luggage</Text></Pressable>
             </View>
 
-            <View style={hostStyles.fareRow}>
-              <Text style={styles.postMeta}>Suggested fare</Text>
-              <Text style={hostStyles.fareValue}>{vehicleType === "cab" ? "60" : "45"} / person</Text>
-            </View>
+            <Text style={hostStyles.fieldLabel}>Start time (HH:MM)</Text>
+            <TextInput
+              style={styles.input}
+              value={rideStartTime}
+              onChangeText={setRideStartTime}
+              placeholder="08:30"
+              placeholderTextColor="#7B879C"
+              keyboardType="numbers-and-punctuation"
+            />
+
+            <Text style={hostStyles.fieldLabel}>Price per person</Text>
+            <TextInput
+              style={styles.input}
+              value={pricePerPerson}
+              onChangeText={setPricePerPerson}
+              placeholder="45"
+              placeholderTextColor="#7B879C"
+              keyboardType="numeric"
+            />
 
             <AppButton
               title={isCreating ? "Posting..." : "Post ride"}
@@ -165,20 +206,5 @@ const hostStyles = StyleSheet.create({
     color: "#D1D5DB",
     fontSize: 13,
     fontFamily: "GoogleSansFlexMedium",
-  },
-  fareRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 2,
-  },
-  fareValue: {
-    color: "#E8F5E1",
-    backgroundColor: "#335F2D",
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
   },
 });

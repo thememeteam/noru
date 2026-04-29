@@ -9,6 +9,18 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS } from "./constants";
+function formatRideTime(rideStartAt?: number | null) {
+  if (!rideStartAt || !Number.isFinite(rideStartAt)) {
+    return null;
+  }
+
+  const date = new Date(rideStartAt);
+  if (Number.isNaN(date.getTime())) {
+    return null;
+  }
+
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 export function WaitingRoomScreen() {
   const styles = useAppStyles();
@@ -144,26 +156,38 @@ export function WaitingRoomScreen() {
               <Text style={styles.description}>Loading ride details...</Text>
             ) : hostedRideData ? (
               <>
-                <View style={waitingStyles.summaryCard}>
-                  <Text style={[styles.postName, waitingStyles.routeText]}>
-                    {hostedRideData.ridePost.startPoint} → {hostedRideData.ridePost.endPoint}
-                  </Text>
-                  <Text style={[styles.postMeta, waitingStyles.metaText]}>
-                    {VEHICLE_LABELS[hostedRideData.ridePost.vehicleType]} · {hostedRideData.ridePost.capacity} seats offered
-                  </Text>
-                  <View style={waitingStyles.pillRow}>
-                    <View style={[styles.badge, waitingStyles.pendingPill]}>
-                      <Text style={[styles.badgeText, waitingStyles.pendingPillText]}>
-                        {hostedRideData.ridePost.joinedCount} joined
-                      </Text>
-                    </View>
-                    <View style={[styles.badge, waitingStyles.acceptedPill]}>
-                      <Text style={[styles.badgeText, waitingStyles.acceptedPillText]}>
-                        {Math.max(0, hostedRideData.ridePost.capacity - hostedRideData.ridePost.joinedCount)} seats left
-                      </Text>
-                    </View>
-                  </View>
-                </View>
+                {
+                  (() => {
+                    const rideStartAt = (hostedRideData.ridePost as any).rideStartAt as number | undefined;
+                    const pricePerPerson = (hostedRideData.ridePost as any).pricePerPerson as number | undefined;
+                    const timeLabel = formatRideTime(rideStartAt) ?? "Time TBD";
+                    const priceLabel = pricePerPerson && Number.isFinite(pricePerPerson)
+                      ? `${pricePerPerson} / person`
+                      : "Price TBD";
+                    return (
+                      <View style={waitingStyles.summaryCard}>
+                        <Text style={[styles.postName, waitingStyles.routeText]}>
+                          {hostedRideData.ridePost.startPoint} → {hostedRideData.ridePost.endPoint}
+                        </Text>
+                        <Text style={[styles.postMeta, waitingStyles.metaText]}>
+                          {VEHICLE_LABELS[hostedRideData.ridePost.vehicleType]} · {timeLabel} · {priceLabel}
+                        </Text>
+                        <View style={waitingStyles.pillRow}>
+                          <View style={[styles.badge, waitingStyles.pendingPill]}>
+                            <Text style={[styles.badgeText, waitingStyles.pendingPillText]}>
+                              {hostedRideData.ridePost.joinedCount} joined
+                            </Text>
+                          </View>
+                          <View style={[styles.badge, waitingStyles.acceptedPill]}>
+                            <Text style={[styles.badgeText, waitingStyles.acceptedPillText]}>
+                              {Math.max(0, hostedRideData.ridePost.capacity - hostedRideData.ridePost.joinedCount)} seats left
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                    );
+                  })()
+                }
 
                 <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>PENDING REQUESTS</Text>
                 {hostedRideData.joinees.length === 0 ? (
@@ -236,14 +260,26 @@ export function WaitingRoomScreen() {
               </>
             ) : joinedRideData ? (
               <>
-                <View style={waitingStyles.summaryCard}>
-                  <Text style={[styles.postName, waitingStyles.routeText]}>
-                    {joinedRideData.ridePost.startPoint} → {joinedRideData.ridePost.endPoint}
-                  </Text>
-                  <Text style={[styles.postMeta, waitingStyles.metaText]}>
-                    {VEHICLE_LABELS[joinedRideData.ridePost.vehicleType]} · {joinedRideData.ridePost.joinedCount}/{joinedRideData.ridePost.capacity} joined
-                  </Text>
-                </View>
+                {
+                  (() => {
+                    const rideStartAt = (joinedRideData.ridePost as any).rideStartAt as number | undefined;
+                    const pricePerPerson = (joinedRideData.ridePost as any).pricePerPerson as number | undefined;
+                    const timeLabel = formatRideTime(rideStartAt) ?? "Time TBD";
+                    const priceLabel = pricePerPerson && Number.isFinite(pricePerPerson)
+                      ? `${pricePerPerson} / person`
+                      : "Price TBD";
+                    return (
+                      <View style={waitingStyles.summaryCard}>
+                        <Text style={[styles.postName, waitingStyles.routeText]}>
+                          {joinedRideData.ridePost.startPoint} → {joinedRideData.ridePost.endPoint}
+                        </Text>
+                        <Text style={[styles.postMeta, waitingStyles.metaText]}>
+                          {VEHICLE_LABELS[joinedRideData.ridePost.vehicleType]} · {timeLabel} · {priceLabel}
+                        </Text>
+                      </View>
+                    );
+                  })()
+                }
 
                 <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>HOST</Text>
                 <View style={[styles.postItem, waitingStyles.participantCard]}>
