@@ -145,7 +145,7 @@ export const createUserReport = mutation({
     reportedUserId: v.optional(v.id("users")),
     reportedName: v.string(),
     reason: v.string(),
-    ridePostId: v.optional(v.id("ridePosts")),
+    ridePostId: v.id("ridePosts"),
   },
   handler: async (ctx, args) => {
     const reporterUserId = await getCurrentUserOrThrow(ctx);
@@ -179,12 +179,11 @@ export const createUserReport = mutation({
       throw new Error("You cannot report yourself.");
     }
 
-    if (args.ridePostId) {
-      const sharedRideOptions = await getSharedRideOptions(ctx, reporterUserId, resolvedReportedUserId);
-      const isSharedRide = sharedRideOptions.some((item) => item.ridePostId === args.ridePostId);
-      if (!isSharedRide) {
-        throw new Error("Selected ride is invalid. Choose a ride where both users were present.");
-      }
+    // A ride must always be provided and both users must have been in it
+    const sharedRideOptions = await getSharedRideOptions(ctx, reporterUserId, resolvedReportedUserId);
+    const isSharedRide = sharedRideOptions.some((item) => item.ridePostId === args.ridePostId);
+    if (!isSharedRide) {
+      throw new Error("You can only report someone from a shared ride. Select a ride where both of you were present.");
     }
 
     const reason = args.reason.trim();

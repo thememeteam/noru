@@ -29,6 +29,7 @@ export function WaitingRoomScreen() {
 
   const onboarding = useQuery(api.onboarding.getOnboardingState);
   const stopRidePost = useMutation(api.rides.stopRidePost);
+  const acceptJoineeForRide = useMutation(api.rides.acceptJoineeForRide);
   const removeJoineeFromRide = useMutation(api.rides.removeJoineeFromRide);
   const leaveRidePost = useMutation(api.rides.leaveRidePost);
   const markNotificationRead = useMutation(api.rides.markNotificationRead);
@@ -47,11 +48,23 @@ export function WaitingRoomScreen() {
   const [isLeaving, setIsLeaving] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{
     name: string;
-    email: string | null;
     photoUrl: string | null;
-    ratingAverage: number | null;
-    ratingCount: number;
+    registrationNumber: string | null;
   } | null>(null);
+
+  const extractRegistrationNumber = (name: string, email?: string | null) => {
+    const bracketMatch = name.match(/\[([^\]]+)\]/);
+    if (bracketMatch && bracketMatch[1]) {
+      return bracketMatch[1].trim();
+    }
+
+    if (email) {
+      const emailHandle = email.split("@")[0]?.trim();
+      return emailHandle || null;
+    }
+
+    return null;
+  };
 
   useEffect(() => {
     if (!ridePostId || (onboarding && !onboarding.isCompleted)) {
@@ -64,7 +77,11 @@ export function WaitingRoomScreen() {
       return;
     }
     if (joinedRideData.ridePost.isStopped) {
-      router.replace({ pathname: "/feedback", params: { ridePostId } });
+      if (joinedRideData.joinStatus === "accepted") {
+        router.replace({ pathname: "/feedback", params: { ridePostId } });
+      } else {
+        router.replace("/");
+      }
     }
   }, [joinedRideData, ridePostId]);
 
@@ -87,11 +104,15 @@ export function WaitingRoomScreen() {
     ]);
   }, [markNotificationRead, unreadNotifications]);
 
-  const onStopRide = async (id: string) => {
+  const onStopRide = async (id: string, showFeedback: boolean) => {
     try {
       setStoppingRideId(id);
       await stopRidePost({ ridePostId: id as Id<"ridePosts"> });
-      router.replace({ pathname: "/feedback", params: { ridePostId: id } });
+      if (showFeedback) {
+        router.replace({ pathname: "/feedback", params: { ridePostId: id } });
+      } else {
+        router.replace("/");
+      }
     } catch (error) {
       Alert.alert(
         "Could not stop ride",
@@ -135,6 +156,24 @@ export function WaitingRoomScreen() {
       );
     } finally {
       setRemovingUserId(null);
+    }
+  };
+
+  const onAcceptJoinee = async (joineeUserId: string) => {
+    if (!ridePostId) {
+      return;
+    }
+
+    try {
+      await acceptJoineeForRide({
+        ridePostId: ridePostId as Id<"ridePosts">,
+        joineeUserId: joineeUserId as Id<"users">,
+      });
+    } catch (error) {
+      Alert.alert(
+        "Could not accept participant",
+        error instanceof Error ? error.message : "Please try again.",
+      );
     }
   };
 
@@ -190,21 +229,22 @@ export function WaitingRoomScreen() {
                 }
 
                 <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>PENDING REQUESTS</Text>
-                {hostedRideData.joinees.length === 0 ? (
+                {hostedRideData.pendingJoinees.length === 0 ? (
                   <Text style={styles.description}>No one has joined yet.</Text>
                 ) : (
                   <View style={styles.postList}>
-                    {hostedRideData.joinees.map((joinee) => (
+                    {hostedRideData.pendingJoinees.map((joinee) => (
                       <View key={joinee._id} style={[styles.postItem, waitingStyles.participantCard]}>
                         <View style={styles.personRow}>
                           <Pressable
                             onPress={() =>
                               setSelectedProfile({
                                 name: joinee.joineeName,
-                                email: joinee.joineeEmail,
                                 photoUrl: joinee.joineePhotoUrl,
-                                ratingAverage: joinee.ratingAverage,
-                                ratingCount: joinee.ratingCount,
+                                registrationNumber: extractRegistrationNumber(
+                                  joinee.joineeName,
+                                  joinee.joineeEmail,
+                                ),
                               })
                             }>
                             {joinee.joineePhotoUrl ? (
@@ -221,7 +261,7 @@ export function WaitingRoomScreen() {
                           </View>
                         </View>
                         <View style={waitingStyles.pendingActionRow}>
-                          <Pressable onPress={() => {}} style={waitingStyles.inlineActionButton}>
+                          <Pressable onPress={() => void onAcceptJoinee(String(joinee.userId))} style={waitingStyles.inlineActionButton}>
                             <Text style={waitingStyles.inlineActionButtonText}>Accept</Text>
                           </Pressable>
                           <Pressable
@@ -243,20 +283,83 @@ export function WaitingRoomScreen() {
                 )}
 
                 <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>ACCEPTED</Text>
-                <Text style={styles.postMeta}>Accepted list is not enabled yet in this build.</Text>
+                {hostedRideData.acceptedJoinees.length === 0 ? (
+                  <Text style={styles.postMeta}>No accepted riders yet.</Text>
+                ) : (
+                  <View style={styles.postList}>
+                    {hostedRideData.acceptedJoinees.map((joinee) => (
+                      <View key={joinee._id} style={[styles.postItem, waitingStyles.participantCard]}>
+                        <View style={styles.personRow}>
+                          <Pressable
+                            onPress={() =>
+                              setSelectedProfile({
+                                name: joinee.joineeName,
+                                photoUrl: joinee.joineePhotoUrl,
+                                registrationNumber: extractRegistrationNumber(
+                                  joinee.joineeName,
+                                  joinee.joineeEmail,
+                                ),
+                              })
+                            }>
+                            {joinee.joineePhotoUrl ? (
+                              <Image source={{ uri: joinee.joineePhotoUrl }} style={styles.personAvatarSmall} />
+                            ) : (
+                              <View style={styles.personAvatarFallbackSmall}>
+                                <Text style={styles.personAvatarFallbackTextSmall}>U</Text>
+                              </View>
+                            )}
+                          </Pressable>
+                          <View style={waitingStyles.participantTextWrap}>
+                            <Text style={styles.postName}>{joinee.joineeName}</Text>
+                            <Text style={styles.postMeta}>{joinee.joineeEmail ?? "No email"}</Text>
+                          </View>
+                        </View>
+                        <View style={waitingStyles.pendingActionRow}>
+                          <Pressable
+                            style={({ pressed }) => [
+                              waitingStyles.inlineActionButton,
+                              removingUserId === joinee.userId && waitingStyles.inlineActionButtonDisabled,
+                              pressed && removingUserId !== joinee.userId && styles.buttonPressed,
+                            ]}
+                            onPress={() => void onRemoveJoinee(String(joinee.userId))}
+                            disabled={removingUserId === joinee.userId}>
+                            <Text style={waitingStyles.inlineActionButtonText}>
+                              {removingUserId === joinee.userId ? "Removing..." : "Kick"}
+                            </Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                )}
 
-                <Pressable
-                  style={({ pressed }) => [
-                    waitingStyles.stopRideButton,
-                    stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
-                    pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
-                  ]}
-                  onPress={() => void onStopRide(hostedRideData.ridePost._id)}
-                  disabled={stoppingRideId === hostedRideData.ridePost._id}>
-                  <Text style={waitingStyles.stopRideButtonText}>
-                    {stoppingRideId === hostedRideData.ridePost._id ? "Stopping..." : "Cancel ride"}
-                  </Text>
-                </Pressable>
+                <View style={waitingStyles.stopRideRow}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      waitingStyles.stopRideButton,
+                      waitingStyles.stopRideButtonSecondary,
+                      stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
+                      pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
+                    ]}
+                    onPress={() => void onStopRide(hostedRideData.ridePost._id, false)}
+                    disabled={stoppingRideId === hostedRideData.ridePost._id}>
+                    <Text style={waitingStyles.stopRideButtonText}>
+                      {stoppingRideId === hostedRideData.ridePost._id ? "Stopping..." : "Cancel ride"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [
+                      waitingStyles.stopRideButton,
+                      stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
+                      pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
+                    ]}
+                    onPress={() => void onStopRide(hostedRideData.ridePost._id, true)}
+                    disabled={stoppingRideId === hostedRideData.ridePost._id}>
+                    <Text style={waitingStyles.stopRideButtonText}>
+                      {stoppingRideId === hostedRideData.ridePost._id ? "Stopping..." : "End ride"}
+                    </Text>
+                  </Pressable>
+                </View>
               </>
             ) : joinedRideData ? (
               <>
@@ -288,10 +391,11 @@ export function WaitingRoomScreen() {
                       onPress={() =>
                         setSelectedProfile({
                           name: joinedRideData.host.name,
-                          email: joinedRideData.host.email,
                           photoUrl: joinedRideData.host.photoUrl,
-                          ratingAverage: joinedRideData.host.ratingAverage,
-                          ratingCount: joinedRideData.host.ratingCount,
+                          registrationNumber: extractRegistrationNumber(
+                            joinedRideData.host.name,
+                            joinedRideData.host.email,
+                          ),
                         })
                       }>
                       {joinedRideData.host.photoUrl ? (
@@ -310,21 +414,22 @@ export function WaitingRoomScreen() {
                 </View>
 
                 <Text style={[styles.sectionLabel, waitingStyles.sectionHeading]}>PARTICIPANTS</Text>
-                {joinedRideData.joinees.length === 0 ? (
+                {joinedRideData.acceptedJoinees.length === 0 ? (
                   <Text style={styles.description}>No participants yet.</Text>
                 ) : (
                   <View style={styles.postList}>
-                    {joinedRideData.joinees.map((joinee) => (
+                    {joinedRideData.acceptedJoinees.map((joinee) => (
                       <View key={joinee._id} style={[styles.postItem, waitingStyles.participantCard]}>
                         <View style={styles.personRow}>
                           <Pressable
                             onPress={() =>
                               setSelectedProfile({
                                 name: joinee.joineeName,
-                                email: joinee.joineeEmail,
                                 photoUrl: joinee.joineePhotoUrl,
-                                ratingAverage: joinee.ratingAverage,
-                                ratingCount: joinee.ratingCount,
+                                registrationNumber: extractRegistrationNumber(
+                                  joinee.joineeName,
+                                  joinee.joineeEmail,
+                                ),
                               })
                             }>
                             {joinee.joineePhotoUrl ? (
@@ -375,8 +480,9 @@ export function WaitingRoomScreen() {
                   )}
                   <View>
                     <Text style={styles.postName}>{selectedProfile.name}</Text>
-                    <Text style={styles.postMeta}>{selectedProfile.email ?? "No email found"}</Text>
-                    <Text style={styles.postMeta}>Rating: {selectedProfile.ratingAverage ?? "N/A"}</Text>
+                    <Text style={styles.postMeta}>
+                      Reg. no.: {selectedProfile.registrationNumber ?? "N/A"}
+                    </Text>
                   </View>
                 </View>
               </>
@@ -464,7 +570,13 @@ const waitingStyles = StyleSheet.create({
   inlineActionButtonDisabled: {
     opacity: 0.55,
   },
+  stopRideRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 2,
+  },
   stopRideButton: {
+    flex: 1,
     minHeight: 46,
     borderRadius: 12,
     borderWidth: 1,
@@ -472,12 +584,18 @@ const waitingStyles = StyleSheet.create({
     backgroundColor: "#F5E4E8",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 2,
+  },
+  stopRideButtonSecondary: {
+    borderColor: "#C3CAD4",
+    backgroundColor: "#E9EDF3",
   },
   stopRideButtonText: {
     color: "#8D2E47",
     fontSize: 17,
     fontFamily: "GoogleSansFlexMedium",
+  },
+  stopRideButtonTextSecondary: {
+    color: "#2B3A4A",
   },
   stopRideButtonDisabled: {
     opacity: 0.6,

@@ -6,7 +6,7 @@ import { mutation, query } from "./_generated/server";
 const VEHICLE_OPTIONS = {
   auto: { capacity: 2 },
   cab: { capacity: 3 },
-  ownBike: { capacity: 0 },
+  ownBike: { capacity: 1 },
   ownCar: { capacity: 3 },
 } as const;
 
@@ -35,12 +35,28 @@ async function getUserRatingSummaryForUser(ctx: any, userId: any) {
       ratingCount: 0,
     };
   }
-
-  const total = ratings.reduce((sum: number, item: any) => sum + item.rating, 0);
   return {
-    ratingAverage: Math.round((total / ratings.length) * 10) / 10,
+    ratingAverage: null,
     ratingCount: ratings.length,
   };
+}
+
+async function updatePricePerPersonForRide(ctx: any, ridePostId: any) {
+  const ridePost = await ctx.db.get(ridePostId);
+  if (!ridePost?.totalPrice || !Number.isFinite(ridePost.totalPrice)) {
+    return;
+  }
+
+  const joins = await ctx.db
+    .query("rideJoins")
+    .withIndex("by_ride_post_id", (q: any) => q.eq("ridePostId", ridePostId))
+    .collect();
+
+  const acceptedCount = joins.filter((join: any) => (join.status ?? "pending") === "accepted").length;
+  const splitCount = Math.max(1, acceptedCount + 1);
+  const nextPrice = Math.round((ridePost.totalPrice / splitCount) * 100) / 100;
+
+  await ctx.db.patch(ridePostId, { pricePerPerson: nextPrice });
 }
 
 export const listJoinableRidePosts = query({
@@ -101,6 +117,35 @@ export const getMyActiveJoinedRide = query({
           startPoint: ridePost.startPoint,
           endPoint: ridePost.endPoint,
           vehicleType: ridePost.vehicleType,
+        };
+      }
+    }
+
+    return null;
+  },
+});
+
+export const getMyActiveHostedRide = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const posts = await ctx.db
+      .query("ridePosts")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(20);
+
+    for (const post of posts) {
+      if (!post.isStopped) {
+        return {
+          ridePostId: post._id,
+          startPoint: post.startPoint,
+          endPoint: post.endPoint,
+          vehicleType: post.vehicleType,
         };
       }
     }
@@ -174,7 +219,7 @@ export const createRidePost = mutation({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
-    pricePerPerson: v.number(),
+    totalPrice: v.number(),
     rideStartAt: v.number(),
   },
   handler: async (ctx, args) => {
@@ -189,8 +234,8 @@ export const createRidePost = mutation({
       throw new Error("Start and end point are required.");
     }
 
-    if (!Number.isFinite(args.pricePerPerson) || args.pricePerPerson <= 0) {
-      throw new Error("Price per person must be greater than 0.");
+    if (!Number.isFinite(args.totalPrice) || args.totalPrice <= 0) {
+      throw new Error("Total price must be greater than 0.");
     }
 
     if (!Number.isFinite(args.rideStartAt) || args.rideStartAt <= 0) {
@@ -209,7 +254,8 @@ export const createRidePost = mutation({
       startPoint,
       endPoint,
       vehicleType: args.vehicleType,
-      pricePerPerson: args.pricePerPerson,
+      totalPrice: args.totalPrice,
+      pricePerPerson: args.totalPrice,
       rideStartAt: args.rideStartAt,
       capacity,
       joinedCount,
@@ -252,11 +298,15 @@ export const getHostedRidePost = query({
     const joinees = await Promise.all(
       joins.map(async (join) => ({
         ...join,
+        status: join.status ?? "pending",
         joineeEmail: (await ctx.db.get(join.userId))?.email ?? null,
         joineePhotoUrl: await getProfilePhotoUrl(ctx, join.userId),
         ...(await getUserRatingSummaryForUser(ctx, join.userId)),
       })),
     );
+
+    const pendingJoinees = joinees.filter((join) => join.status !== "accepted");
+    const acceptedJoinees = joinees.filter((join) => join.status === "accepted");
 
     return {
       ridePost,
@@ -269,6 +319,8 @@ export const getHostedRidePost = query({
         ratingCount: hostRating.ratingCount,
       },
       joinees,
+      pendingJoinees,
+      acceptedJoinees,
     };
   },
 });
@@ -313,11 +365,15 @@ export const getJoinedRidePost = query({
     const joinees = await Promise.all(
       joins.map(async (item) => ({
         ...item,
+        status: item.status ?? "pending",
         joineeEmail: (await ctx.db.get(item.userId))?.email ?? null,
         joineePhotoUrl: await getProfilePhotoUrl(ctx, item.userId),
         ...(await getUserRatingSummaryForUser(ctx, item.userId)),
       })),
     );
+
+    const pendingJoinees = joinees.filter((item) => item.status !== "accepted");
+    const acceptedJoinees = joinees.filter((item) => item.status === "accepted");
 
     return {
       ridePost,
@@ -330,6 +386,9 @@ export const getJoinedRidePost = query({
         ratingCount: hostRating.ratingCount,
       },
       joinees,
+      pendingJoinees,
+      acceptedJoinees,
+      joinStatus: join.status ?? "pending",
     };
   },
 });
@@ -387,6 +446,7 @@ export const joinRidePost = mutation({
       ridePostId: args.ridePostId,
       userId,
       joineeName,
+      status: "pending",
       createdAt: Date.now(),
     });
 
@@ -396,6 +456,43 @@ export const joinRidePost = mutation({
       joinedCount: nextJoinedCount,
       isFull: nextIsFull,
     });
+  },
+});
+
+export const acceptJoineeForRide = mutation({
+  args: {
+    ridePostId: v.id("ridePosts"),
+    joineeUserId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ridePost = await ctx.db.get(args.ridePostId);
+    if (!ridePost) {
+      throw new Error("Ride post not found.");
+    }
+    if (ridePost.userId !== userId) {
+      throw new Error("Only the host can accept a participant.");
+    }
+
+    const existingJoin = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_user_and_ride", (q) => q.eq("userId", args.joineeUserId).eq("ridePostId", args.ridePostId))
+      .first();
+
+    if (!existingJoin) {
+      throw new Error("User is not part of this ride.");
+    }
+
+    await ctx.db.patch(existingJoin._id, {
+      status: "accepted",
+      acceptedAt: Date.now(),
+    });
+
+    await updatePricePerPersonForRide(ctx, args.ridePostId);
   },
 });
 
@@ -430,6 +527,10 @@ export const leaveRidePost = mutation({
       joinedCount: nextJoinedCount,
       isFull: false,
     });
+
+    if ((existingJoin.status ?? "pending") === "accepted") {
+      await updatePricePerPersonForRide(ctx, args.ridePostId);
+    }
   },
 });
 
@@ -468,6 +569,10 @@ export const removeJoineeFromRide = mutation({
       joinedCount: nextJoinedCount,
       isFull: false,
     });
+
+    if ((existingJoin.status ?? "pending") === "accepted") {
+      await updatePricePerPersonForRide(ctx, args.ridePostId);
+    }
 
     await ctx.db.insert("userNotifications", {
       userId: args.joineeUserId,
@@ -554,12 +659,6 @@ export const getRideFeedbackTargets = query({
           const user = await ctx.db.get(targetUserId);
           const photoUrl = await getProfilePhotoUrl(ctx, targetUserId);
           const rating = await getUserRatingSummaryForUser(ctx, targetUserId);
-          const existing = await ctx.db
-            .query("userRatings")
-            .withIndex("by_ride_and_rater_and_ratee", (q: any) =>
-              q.eq("ridePostId", args.ridePostId).eq("raterUserId", userId).eq("rateeUserId", targetUserId),
-            )
-            .first();
 
           return {
             userId: targetUserId,
@@ -568,7 +667,6 @@ export const getRideFeedbackTargets = query({
             photoUrl,
             ratingAverage: rating.ratingAverage,
             ratingCount: rating.ratingCount,
-            existingRating: existing?.rating ?? 0,
           };
         }),
     );
@@ -587,7 +685,6 @@ export const submitRideUserFeedback = mutation({
     ratings: v.array(
       v.object({
         rateeUserId: v.id("users"),
-        rating: v.number(),
         whatWasGood: v.optional(v.string()),
         whatWasBad: v.optional(v.string()),
         anythingElse: v.optional(v.string()),
@@ -619,9 +716,6 @@ export const submitRideUserFeedback = mutation({
     }
 
     for (const item of args.ratings) {
-      if (item.rating < 1 || item.rating > 5) {
-        throw new Error("Ratings must be between 1 and 5.");
-      }
       if (item.rateeUserId === userId) {
         throw new Error("You cannot rate yourself.");
       }
@@ -638,7 +732,6 @@ export const submitRideUserFeedback = mutation({
 
       if (existing) {
         await ctx.db.patch(existing._id, {
-          rating: item.rating,
           whatWasGood: item.whatWasGood?.trim() || undefined,
           whatWasBad: item.whatWasBad?.trim() || undefined,
           anythingElse: item.anythingElse?.trim() || undefined,
@@ -649,7 +742,6 @@ export const submitRideUserFeedback = mutation({
           ridePostId: args.ridePostId,
           raterUserId: userId,
           rateeUserId: item.rateeUserId,
-          rating: item.rating,
           whatWasGood: item.whatWasGood?.trim() || undefined,
           whatWasBad: item.whatWasBad?.trim() || undefined,
           anythingElse: item.anythingElse?.trim() || undefined,
@@ -681,11 +773,46 @@ export const getMyRatingSummary = query({
       };
     }
 
-    const total = ratings.reduce((sum: number, item: any) => sum + item.rating, 0);
     return {
-      averageRating: Math.round((total / ratings.length) * 10) / 10,
+      averageRating: null,
       totalRatings: ratings.length,
     };
+  },
+});
+
+export const getMyRatingReviews = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ratings = await ctx.db
+      .query("userRatings")
+      .withIndex("by_ratee_user_id", (q: any) => q.eq("rateeUserId", userId))
+      .order("desc")
+      .take(20);
+
+    const reviews = await Promise.all(
+      ratings.map(async (rating) => {
+        const reviewer = await ctx.db.get(rating.raterUserId);
+        const note =
+          rating.whatWasGood?.trim()
+          || rating.whatWasBad?.trim()
+          || rating.anythingElse?.trim()
+          || null;
+
+        return {
+          id: rating._id,
+          reviewerName: reviewer?.name?.trim() || reviewer?.email?.trim() || "Student",
+          note,
+          createdAt: rating.updatedAt ?? rating.createdAt,
+        };
+      }),
+    );
+
+    return reviews.filter((review) => review.note);
   },
 });
 
@@ -712,5 +839,22 @@ export const stopRidePost = mutation({
       isStopped: true,
       isFull: true,
     });
+  },
+});
+
+export const removeLegacyRatingField = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ratings = await ctx.db.query("userRatings").collect();
+    await Promise.all(
+      ratings
+        .filter((rating: any) => typeof rating.rating === "number")
+        .map((rating: any) => ctx.db.patch(rating._id, { rating: undefined })),
+    );
   },
 });

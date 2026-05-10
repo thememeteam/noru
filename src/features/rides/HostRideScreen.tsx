@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
@@ -37,11 +37,11 @@ export function HostRideScreen() {
   const [startPoint, setStartPoint] = useState("");
   const [endPoint, setEndPoint] = useState("");
   const [vehicleType, setVehicleType] = useState<VehicleType>("auto");
-  const [pricePerPerson, setPricePerPerson] = useState("");
+  const [totalPrice, setTotalPrice] = useState("");
   const [rideStartTime, setRideStartTime] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const parsedPrice = Number(pricePerPerson);
+  const parsedPrice = Number(totalPrice);
   const parsedRideStartAt = parseRideStartAt(rideStartTime);
   const canCreate =
     startPoint.trim().length > 0
@@ -67,13 +67,13 @@ export function HostRideScreen() {
         startPoint,
         endPoint,
         vehicleType,
-        pricePerPerson: parsedPrice,
+        totalPrice: parsedPrice,
         rideStartAt: parsedRideStartAt as number,
       });
       setStartPoint("");
       setEndPoint("");
       setVehicleType("auto");
-      setPricePerPerson("");
+      setTotalPrice("");
       setRideStartTime("");
       router.replace({ pathname: "/waiting", params: { ridePostId: createdId } });
     } catch (error) {
@@ -100,9 +100,11 @@ export function HostRideScreen() {
   }
 
   return (
-    <View style={styles.screenContainer}>
+    <KeyboardAvoidingView
+      style={styles.screenContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent}>
+        <ScrollView contentContainerStyle={styles.boardContent} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Post a ride</Text>
 
@@ -143,14 +145,7 @@ export function HostRideScreen() {
               })}
             </View>
 
-            <Text style={hostStyles.fieldLabel}>Ride preferences</Text>
-            <View style={hostStyles.deadChipRow}>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>Women only</Text></Pressable>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No talking</Text></Pressable>
-              <Pressable onPress={() => {}} style={hostStyles.deadChip}><Text style={hostStyles.deadChipText}>No luggage</Text></Pressable>
-            </View>
-
-            <Text style={hostStyles.fieldLabel}>Start time (HH:MM)</Text>
+            <Text style={hostStyles.fieldLabel}>Start time (HH:MM - 24hr clock)</Text>
             <TextInput
               style={styles.input}
               value={rideStartTime}
@@ -160,12 +155,12 @@ export function HostRideScreen() {
               keyboardType="numbers-and-punctuation"
             />
 
-            <Text style={hostStyles.fieldLabel}>Price per person</Text>
+            <Text style={hostStyles.fieldLabel}>Enter total price (to be split)</Text>
             <TextInput
               style={styles.input}
-              value={pricePerPerson}
-              onChangeText={setPricePerPerson}
-              placeholder="45"
+              value={totalPrice}
+              onChangeText={setTotalPrice}
+              placeholder="180"
               placeholderTextColor="#7B879C"
               keyboardType="numeric"
             />
@@ -178,7 +173,7 @@ export function HostRideScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -187,24 +182,6 @@ const hostStyles = StyleSheet.create({
     fontSize: 13,
     color: "#B8C0CC",
     letterSpacing: 0.4,
-    fontFamily: "GoogleSansFlexMedium",
-  },
-  deadChipRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  deadChip: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#5B6371",
-    backgroundColor: "#2A2D33",
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  deadChipText: {
-    color: "#D1D5DB",
-    fontSize: 13,
     fontFamily: "GoogleSansFlexMedium",
   },
 });

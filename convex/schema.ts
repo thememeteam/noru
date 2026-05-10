@@ -8,6 +8,14 @@ export default defineSchema({
     userId: v.id("users"),
     universityEmail: v.string(),
     profilePhotoStorageId: v.id("_storage"),
+    gender: v.optional(
+      v.union(
+        v.literal("female"),
+        v.literal("male"),
+        v.literal("nonBinary"),
+        v.literal("preferNotToSay"),
+      ),
+    ),
     completedAt: v.number(),
   }).index("by_user_id", ["userId"]),
   ridePosts: defineTable({
@@ -21,6 +29,7 @@ export default defineSchema({
       v.literal("ownBike"),
       v.literal("ownCar"),
     ),
+    totalPrice: v.optional(v.number()),
     pricePerPerson: v.optional(v.number()),
     rideStartAt: v.optional(v.number()),
     capacity: v.number(),
@@ -35,6 +44,8 @@ export default defineSchema({
     ridePostId: v.id("ridePosts"),
     userId: v.id("users"),
     joineeName: v.string(),
+    status: v.optional(v.union(v.literal("pending"), v.literal("accepted"))),
+    acceptedAt: v.optional(v.number()),
     createdAt: v.number(),
   })
     .index("by_ride_post_id", ["ridePostId"])
@@ -81,7 +92,7 @@ export default defineSchema({
     ridePostId: v.id("ridePosts"),
     raterUserId: v.id("users"),
     rateeUserId: v.id("users"),
-    rating: v.number(),
+    rating: v.optional(v.number()),
     whatWasGood: v.optional(v.string()),
     whatWasBad: v.optional(v.string()),
     anythingElse: v.optional(v.string()),

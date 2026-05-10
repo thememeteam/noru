@@ -1,8 +1,8 @@
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { router } from "expo-router";
-import React, { useMemo } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
@@ -44,14 +44,68 @@ export function ProfileScreen() {
     api.rides.getMyRatingSummary,
     onboardingState?.isAuthenticated ? {} : "skip",
   );
+  const myRatingReviews = useQuery(
+    api.rides.getMyRatingReviews,
+    onboardingState?.isAuthenticated ? {} : "skip",
+  );
 
   const pastRides = useMemo(() => {
     if (!rideHistory) {
       return [];
     }
 
-    return rideHistory.filter((item) => item.status === "Stopped").slice(0, 3);
+    return rideHistory.filter((item) => item.status === "Stopped");
   }, [rideHistory]);
+
+  const previewRides = useMemo(() => pastRides.slice(0, 3), [pastRides]);
+
+  const [reviewIndex, setReviewIndex] = useState(0);
+  const reviewItems = useMemo(() => myRatingReviews ?? [], [myRatingReviews]);
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const reviewLengthRef = useRef(0);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isRatingsOpen, setIsRatingsOpen] = useState(false);
+
+  useEffect(() => {
+    reviewLengthRef.current = reviewItems.length;
+    if (reviewItems.length <= 1) {
+      setReviewIndex(0);
+    }
+  }, [reviewItems]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (reviewLengthRef.current <= 1) {
+        return;
+      }
+
+      setReviewIndex((prev) => (prev + 1) % reviewLengthRef.current);
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    if (!reviewItems || reviewItems.length === 0) {
+      return;
+    }
+
+    slideAnim.setValue(14);
+    fadeAnim.setValue(0);
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 360,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, reviewIndex, reviewItems, slideAnim]);
 
   const onSignOut = async () => {
     await signOut();
@@ -85,7 +139,7 @@ export function ProfileScreen() {
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent}>
+        <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.card, profileStyles.centerCard]}>
             <View style={profileStyles.centerIdentityWrap}>
               {onboardingState.profilePhotoUrl ? (
@@ -98,14 +152,10 @@ export function ProfileScreen() {
             </View>
             <Text style={[styles.profileName, profileStyles.centerName]}>{displayName}</Text>
             <Text style={[styles.profileEmail, profileStyles.centerEmail]}>{onboardingState.universityEmail ?? "No email found"}</Text>
-            <View style={styles.quickRow}>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Quiet</Text></Pressable>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Punctual</Text></Pressable>
-              <Pressable onPress={() => {}} style={profileStyles.traitChip}><Text style={profileStyles.traitChipText}>Friendly</Text></Pressable>
-            </View>
+
           </View>
 
-          <View style={styles.card}>
+          <Pressable style={styles.card} onPress={() => setIsHistoryOpen(true)}>
             <Text style={styles.sectionLabel}>Ride history</Text>
             {rideHistory === undefined ? (
               <Text style={styles.description}>Loading your rides...</Text>
@@ -113,36 +163,45 @@ export function ProfileScreen() {
               <Text style={styles.description}>No past rides found yet.</Text>
             ) : (
               <View style={styles.postList}>
-                {pastRides.map((item) => (
-                  <View key={item.id} style={[styles.postItem, profileStyles.historyRow]}>
-                    <View style={profileStyles.historyLeft}>
-                      <Text style={styles.postName}>{item.startPoint} {"→"} {item.endPoint}</Text>
-                      <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.createdAt)}</Text>
-                    </View>
-                    <View style={profileStyles.completedPill}><Text style={profileStyles.completedPillText}>Completed</Text></View>
+              {previewRides.map((item) => (
+                <View key={item.id} style={[styles.postItem, profileStyles.historyRow]}>
+                  <View style={profileStyles.historyLeft}>
+                    <Text style={styles.postName}>{item.startPoint} {"→"} {item.endPoint}</Text>
+                    <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.createdAt)}</Text>
                   </View>
-                ))}
+                  <View style={profileStyles.completedPill}><Text style={profileStyles.completedPillText}>Completed</Text></View>
+                </View>
+              ))}
               </View>
             )}
-          </View>
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>My rating</Text>
-            {myRatingSummary === undefined ? (
+          </Pressable>
+          <Pressable style={styles.card} onPress={() => setIsRatingsOpen(true)}>
+            <Text style={styles.sectionLabel}>My ratings</Text>
+            {myRatingReviews === undefined || myRatingSummary === undefined ? (
               <Text style={styles.description}>Loading rating...</Text>
-            ) : myRatingSummary.totalRatings === 0 ? (
+            ) : myRatingSummary.totalRatings === 0 || reviewItems.length === 0 ? (
               <Text style={styles.description}>No ratings yet.</Text>
             ) : (
-              <>
-                <Text style={styles.postName}>{myRatingSummary.averageRating} / 5</Text>
-              </>
+              <View style={profileStyles.reviewCard}>
+                <View style={profileStyles.reviewSlot}>
+                  <Animated.View
+                    style={[
+                      profileStyles.reviewAnimated,
+                      { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+                    ]}>
+                    <Text style={profileStyles.reviewQuote}>
+                      “{reviewItems[reviewIndex]?.note}”
+                    </Text>
+                    <Text style={profileStyles.reviewMeta}>
+                      {reviewItems[reviewIndex]?.reviewerName}
+                    </Text>
+                  </Animated.View>
+                </View>
+              </View>
             )}
-          </View>
+          </Pressable>
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>Account</Text>
-            <Pressable onPress={() => {}} style={profileStyles.accountRow}>
-              <Text style={styles.postName}>Edit preferences</Text>
-              <Text style={styles.postMeta}>{">"}</Text>
-            </Pressable>
 
             <AppButton title="Report a user" onPress={() => router.push("/report")} variant="secondary" />
             {moderationAccess?.isAdmin ? (
@@ -168,6 +227,53 @@ export function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      <Modal visible={isHistoryOpen} transparent animationType="fade" onRequestClose={() => setIsHistoryOpen(false)}>
+        <Pressable style={styles.overlayBackdrop} onPress={() => setIsHistoryOpen(false)}>
+          <View style={styles.overlayCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sectionLabel}>Ride history</Text>
+            {pastRides.length === 0 ? (
+              <Text style={styles.description}>No past rides found yet.</Text>
+            ) : (
+              <ScrollView style={profileStyles.modalScroll} showsVerticalScrollIndicator>
+                <View style={styles.postList}>
+                  {pastRides.map((item) => (
+                    <View key={item.id} style={[styles.postItem, profileStyles.historyRow]}>
+                      <View style={profileStyles.historyLeft}>
+                        <Text style={styles.postName}>{item.startPoint} {"→"} {item.endPoint}</Text>
+                        <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.createdAt)}</Text>
+                      </View>
+                      <View style={profileStyles.completedPill}><Text style={profileStyles.completedPillText}>Completed</Text></View>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={isRatingsOpen} transparent animationType="fade" onRequestClose={() => setIsRatingsOpen(false)}>
+        <Pressable style={styles.overlayBackdrop} onPress={() => setIsRatingsOpen(false)}>
+          <View style={styles.overlayCard} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sectionLabel}>My ratings</Text>
+            {reviewItems.length === 0 ? (
+              <Text style={styles.description}>No ratings yet.</Text>
+            ) : (
+              <ScrollView style={profileStyles.modalScroll} showsVerticalScrollIndicator>
+                <View style={profileStyles.reviewList}>
+                  {reviewItems.map((review) => (
+                    <View key={review.id} style={profileStyles.reviewCard}>
+                      <Text style={profileStyles.reviewQuote}>“{review.note}”</Text>
+                      <Text style={profileStyles.reviewMeta}>{review.reviewerName}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -197,7 +303,7 @@ const profileStyles = StyleSheet.create({
   traitChipText: {
     color: "#1E477A",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   historyRow: {
     flexDirection: "row",
@@ -218,7 +324,7 @@ const profileStyles = StyleSheet.create({
   completedPillText: {
     color: "#335F2D",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   accountRow: {
     borderWidth: 1,
@@ -230,5 +336,40 @@ const profileStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  scrollSection: {
+    maxHeight: 180,
+  },
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: "#4B5563",
+    backgroundColor: "#2A2D33",
+    borderRadius: 12,
+    padding: 12,
+    gap: 6,
+  },
+  reviewSlot: {
+    overflow: "hidden",
+    minHeight: 56,
+    justifyContent: "center",
+  },
+  reviewAnimated: {
+    gap: 6,
+  },
+  reviewList: {
+    gap: 12,
+  },
+  reviewQuote: {
+    color: "#F3F4F6",
+    fontSize: 15,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  reviewMeta: {
+    color: "#AEB5C0",
+    fontSize: 12,
+    fontFamily: "GoogleSansFlexMedium",
+  },
+  modalScroll: {
+    maxHeight: 420,
   },
 });

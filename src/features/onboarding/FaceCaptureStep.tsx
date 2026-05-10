@@ -175,6 +175,6 @@ const onboardingStyles = StyleSheet.create({
   openCameraButtonText: {
     color: "#EAF3FF",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
 });

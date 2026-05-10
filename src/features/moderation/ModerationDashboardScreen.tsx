@@ -47,7 +47,7 @@ export function ModerationDashboardScreen() {
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent}>
+        <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>Moderation dashboard</Text>
             <View style={styles.moderationMetricRow}>

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
@@ -9,12 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 
-const FEEDBACK_TAGS: Array<{ label: string; rating: number }> = [
-  { label: "Punctual", rating: 5 },
-  { label: "Good music", rating: 4 },
-  { label: "Friendly", rating: 4 },
-  { label: "Smooth ride", rating: 5 },
-];
+const FEEDBACK_TAGS = ["Punctual", "Good music", "Friendly", "Smooth ride"];
 
 export function FeedbackScreen() {
   const styles = useAppStyles();
@@ -26,8 +21,7 @@ export function FeedbackScreen() {
   );
   const submitRideUserFeedback = useMutation(api.rides.submitRideUserFeedback);
 
-  const [ratingsByUser, setRatingsByUser] = useState<Record<string, number>>({});
-  const [selectedTagByUser, setSelectedTagByUser] = useState<Record<string, string>>({});
+  const [selectedTagsByUser, setSelectedTagsByUser] = useState<Record<string, string[]>>({});
   const [elseByUser, setElseByUser] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -36,26 +30,16 @@ export function FeedbackScreen() {
       return false;
     }
 
-    return feedbackTargets.targets.every((target) => (ratingsByUser[String(target.userId)] ?? 0) > 0);
-  }, [feedbackTargets, isSubmitting, ratingsByUser]);
+    return feedbackTargets.targets.every((target) => (selectedTagsByUser[String(target.userId)] ?? []).length > 0);
+  }, [feedbackTargets, isSubmitting, selectedTagsByUser]);
 
-  const onTagPress = (userId: string, label: string, rating: number) => {
-    const isSameTag = selectedTagByUser[userId] === label;
+  const onTagPress = (userId: string, label: string) => {
+    const currentTags = selectedTagsByUser[userId] ?? [];
+    const nextTags = currentTags.includes(label)
+      ? currentTags.filter((tag) => tag !== label)
+      : [...currentTags, label];
 
-    setSelectedTagByUser((prev) => {
-      const next = { ...prev };
-      if (isSameTag) {
-        delete next[userId];
-      } else {
-        next[userId] = label;
-      }
-      return next;
-    });
-
-    setRatingsByUser((prev) => ({
-      ...prev,
-      [userId]: isSameTag ? 0 : rating,
-    }));
+    setSelectedTagsByUser((prev) => ({ ...prev, [userId]: nextTags }));
   };
 
   const onSubmit = async () => {
@@ -70,9 +54,10 @@ export function FeedbackScreen() {
         ridePostId: ridePostId as Id<"ridePosts">,
         ratings: feedbackTargets.targets.map((target) => {
           const key = String(target.userId);
+          const selectedTags = selectedTagsByUser[key] ?? [];
           return {
             rateeUserId: target.userId,
-            rating: ratingsByUser[key] ?? 0,
+            whatWasGood: selectedTags.length > 0 ? selectedTags.join(", ") : undefined,
             anythingElse: elseByUser[key]?.trim() || undefined,
           };
         }),
@@ -95,9 +80,11 @@ export function FeedbackScreen() {
   };
 
   return (
-    <View style={styles.screenContainer}>
+    <KeyboardAvoidingView
+      style={styles.screenContainer}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent}>
+        <ScrollView contentContainerStyle={styles.boardContent} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.title}>Ride feedback</Text>
             {feedbackTargets === undefined ? (
@@ -111,7 +98,7 @@ export function FeedbackScreen() {
                 <Text style={styles.description}>Share your feedback with each participant.</Text>
                 {feedbackTargets.targets.map((target) => {
                   const key = String(target.userId);
-                  const selectedTag = selectedTagByUser[key];
+                  const selectedTags = selectedTagsByUser[key] ?? [];
 
                   return (
                     <View key={key} style={styles.postItem}>
@@ -132,13 +119,13 @@ export function FeedbackScreen() {
                       <Text style={feedbackStyles.questionLabel}>What went well?</Text>
                       <View style={styles.quickRow}>
                         {FEEDBACK_TAGS.map((tag) => {
-                          const isActive = selectedTag === tag.label;
+                          const isActive = selectedTags.includes(tag);
                           return (
                             <Pressable
-                              key={`${key}-${tag.label}`}
+                              key={`${key}-${tag}`}
                               style={[styles.vehicleChip, isActive && styles.vehicleChipSelected]}
-                              onPress={() => onTagPress(key, tag.label, tag.rating)}>
-                              <Text style={[styles.vehicleChipText, isActive && styles.vehicleChipTextSelected]}>{tag.label}</Text>
+                              onPress={() => onTagPress(key, tag)}>
+                              <Text style={[styles.vehicleChipText, isActive && styles.vehicleChipTextSelected]}>{tag}</Text>
                             </Pressable>
                           );
                         })}
@@ -170,7 +157,7 @@ export function FeedbackScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -178,6 +165,6 @@ const feedbackStyles = {
   questionLabel: {
     fontSize: 14,
     color: "#D1D5DB",
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
 } as const;

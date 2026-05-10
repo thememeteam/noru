@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useRef, useState } from "react";
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -27,15 +27,40 @@ export function RidePickScreen() {
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
   const posts = useQuery(api.rides.listJoinableRidePosts) ?? [];
   const activeJoinedRide = useQuery(api.rides.getMyActiveJoinedRide);
+  const activeHostedRide = useQuery(api.rides.getMyActiveHostedRide);
   const joinRidePost = useMutation(api.rides.joinRidePost);
   const scrollRef = useRef<ScrollView>(null);
 
   const [joiningRideId, setJoiningRideId] = useState<string | null>(null);
   const [discoverTargetY, setDiscoverTargetY] = useState(0);
+  const [selectedProfile, setSelectedProfile] = useState<{
+    name: string;
+    photoUrl: string | null;
+    registrationNumber: string | null;
+  } | null>(null);
   const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
   const firstName = displayName.split(" ")[0] || "Student";
-  const currentHour = new Date().getHours();
-  const dayGreeting = currentHour < 12 ? "Good morning," : currentHour < 17 ? "Good afternoon," : "Good evening,";
+  const now = new Date();
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  const dayGreeting = minutesNow <= 11 * 60
+    ? "Good morning,"
+    : minutesNow <= 16 * 60
+      ? "Good afternoon,"
+      : "Good evening,";
+
+  const extractRegistrationNumber = (name: string, email?: string | null) => {
+    const bracketMatch = name.match(/\[([^\]]+)\]/);
+    if (bracketMatch && bracketMatch[1]) {
+      return bracketMatch[1].trim();
+    }
+
+    if (email) {
+      const emailHandle = email.split("@")[0]?.trim();
+      return emailHandle || null;
+    }
+
+    return null;
+  };
 
   const onJoinRide = async (ridePostId: string) => {
     try {
@@ -56,6 +81,26 @@ export function RidePickScreen() {
     scrollRef.current?.scrollTo({ y: Math.max(0, discoverTargetY - 8), animated: true });
   };
 
+  const onHostPress = () => {
+    if (activeHostedRide) {
+      Alert.alert(
+        "You already have an active ride",
+        "Open your waiting room to manage the riders.",
+        [
+          {
+            text: "Go to waiting room",
+            onPress: () =>
+              router.replace({ pathname: "/waiting", params: { ridePostId: activeHostedRide.ridePostId } }),
+          },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
+      return;
+    }
+
+    router.push("/host");
+  };
+
   return (
     <View style={[styles.pickScreenContainer, ridePickStyles.screen]}>
       <ScrollView ref={scrollRef} contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
@@ -66,7 +111,6 @@ export function RidePickScreen() {
 
         <View style={ridePickStyles.heroCard}>
           <Text style={ridePickStyles.heroTitle}>Time to head to campus?</Text>
-          <Text style={ridePickStyles.heroSubtitle}>Your usual ride is at 8:30 AM</Text>
           <View style={ridePickStyles.heroActionRow}>
             <Pressable
               style={({ pressed }) => [
@@ -74,41 +118,29 @@ export function RidePickScreen() {
                 ridePickStyles.heroActionPrimary,
                 pressed && ridePickStyles.buttonPressed,
               ]}
-              onPress={() => router.push("/host")}>
+              onPress={onHostPress}>
               <Text style={ridePickStyles.heroActionPrimaryText}>Host a ride</Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                ridePickStyles.heroAction,
-                ridePickStyles.heroActionSecondary,
-                pressed && ridePickStyles.buttonPressed,
-              ]}
-              onPress={() => {}}>
-              <Text style={ridePickStyles.heroActionSecondaryText}>Find a ride</Text>
             </Pressable>
           </View>
         </View>
 
         <Text style={ridePickStyles.sectionTitle} onLayout={(event) => setDiscoverTargetY(event.nativeEvent.layout.y)}>AVAILABLE RIDES</Text>
-        <View style={ridePickStyles.filterRow}>
-          <Pressable style={[ridePickStyles.filterChip, ridePickStyles.filterChipActive]} onPress={() => {}}>
-            <Text style={[ridePickStyles.filterChipText, ridePickStyles.filterChipTextActive]}>All</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Women only</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>No talking</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Auto</Text>
-          </Pressable>
-          <Pressable style={ridePickStyles.filterChip} onPress={() => {}}>
-            <Text style={ridePickStyles.filterChipText}>Cab</Text>
-          </Pressable>
-        </View>
 
-        {activeJoinedRide ? (
+        {activeHostedRide ? (
+          <View style={ridePickStyles.rideCard}>
+            <Text style={ridePickStyles.rideRoute}>You are hosting a ride</Text>
+            <Text style={ridePickStyles.rideMeta}>
+              {activeHostedRide.startPoint} → {activeHostedRide.endPoint}
+            </Text>
+            <Pressable
+              style={({ pressed }) => [ridePickStyles.requestButton, pressed && ridePickStyles.buttonPressed]}
+              onPress={() =>
+                router.replace({ pathname: "/waiting", params: { ridePostId: activeHostedRide.ridePostId } })
+              }>
+              <Text style={ridePickStyles.requestButtonText}>Go to waiting room</Text>
+            </Pressable>
+          </View>
+        ) : activeJoinedRide ? (
           <View style={ridePickStyles.rideCard}>
             <Text style={ridePickStyles.rideRoute}>You are currently in a ride</Text>
             <Text style={ridePickStyles.rideMeta}>{activeJoinedRide.startPoint} → {activeJoinedRide.endPoint}</Text>
@@ -128,12 +160,12 @@ export function RidePickScreen() {
           <View style={styles.postList}>
             {posts.map((post) => {
               const seatsLeft = Math.max(0, post.capacity - post.joinedCount);
-              const pricePerPerson = (post as any).pricePerPerson as number | undefined;
+              const totalPrice = (post as any).totalPrice as number | undefined;
               const rideStartAt = (post as any).rideStartAt as number | undefined;
               const timeLabel = formatRideTime(rideStartAt) ?? "8:30 AM";
-              const priceLabel = pricePerPerson && Number.isFinite(pricePerPerson)
-                ? `${pricePerPerson} / person`
-                : `${post.vehicleType === "cab" ? "60" : "45"} est.`;
+              const priceLabel = totalPrice && Number.isFinite(totalPrice)
+                ? `fare: ${totalPrice}`
+                : "fare: TBD";
               return (
                 <View key={post._id} style={ridePickStyles.rideCard}>
                   <View style={ridePickStyles.rideHeaderRow}>
@@ -143,17 +175,30 @@ export function RidePickScreen() {
                     </View>
                   </View>
 
-                  <Text style={ridePickStyles.rideMeta}>{timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left</Text>
+                  <Text style={ridePickStyles.rideMeta}>
+                    {timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left
+                  </Text>
 
                   <View style={ridePickStyles.rideFooterRow}>
                     <View style={[styles.personRow, ridePickStyles.riderBlock]}>
-                      {post.riderPhotoUrl ? (
-                        <Image source={{ uri: post.riderPhotoUrl }} style={styles.personAvatarSmall} />
-                      ) : (
-                        <View style={styles.personAvatarFallbackSmall}>
-                          <Text style={styles.personAvatarFallbackTextSmall}>{post.riderName.charAt(0).toUpperCase()}</Text>
-                        </View>
-                      )}
+                      <Pressable
+                        onPress={() =>
+                          setSelectedProfile({
+                            name: post.riderName,
+                            photoUrl: post.riderPhotoUrl ?? null,
+                            registrationNumber: extractRegistrationNumber(post.riderName, null),
+                          })
+                        }>
+                        {post.riderPhotoUrl ? (
+                          <Image source={{ uri: post.riderPhotoUrl }} style={styles.personAvatarSmall} />
+                        ) : (
+                          <View style={styles.personAvatarFallbackSmall}>
+                            <Text style={styles.personAvatarFallbackTextSmall}>
+                              {post.riderName.charAt(0).toUpperCase()}
+                            </Text>
+                          </View>
+                        )}
+                      </Pressable>
                       <Text style={ridePickStyles.riderMeta} numberOfLines={1}>{post.riderName} · 4.8</Text>
                     </View>
 
@@ -170,9 +215,24 @@ export function RidePickScreen() {
                       </Text>
                     </Pressable>
                   </View>
-                  <Pressable onPress={() => router.push("/ride-details")} style={ridePickStyles.detailsLinkButton}>
-                    <Text style={ridePickStyles.detailsLinkText}>View ride details</Text>
-                  </Pressable>
+                    <Pressable
+                      onPress={() =>
+                        router.push({
+                          pathname: "/ride-details",
+                          params: {
+                            ridePostId: String(post._id),
+                            startPoint: post.startPoint,
+                            endPoint: post.endPoint,
+                            riderName: post.riderName,
+                            riderPhotoUrl: post.riderPhotoUrl ?? undefined,
+                            totalPrice: totalPrice ? String(totalPrice) : undefined,
+                            rideStartAt: rideStartAt ? String(rideStartAt) : undefined,
+                          },
+                        })
+                      }
+                      style={ridePickStyles.detailsLinkButton}>
+                      <Text style={ridePickStyles.detailsLinkText}>View ride details</Text>
+                    </Pressable>
                 </View>
               );
             })}
@@ -180,20 +240,33 @@ export function RidePickScreen() {
         )}
       </ScrollView>
 
-      <View style={ridePickStyles.bottomTabBar}>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => {}}>
-          <Text style={[ridePickStyles.tabText, ridePickStyles.tabTextActive]}>Home</Text>
+      <Modal visible={!!selectedProfile} transparent animationType="fade" onRequestClose={() => setSelectedProfile(null)}>
+        <Pressable style={styles.overlayBackdrop} onPress={() => setSelectedProfile(null)}>
+          <Pressable style={styles.overlayCard} onPress={() => {}}>
+            {selectedProfile ? (
+              <>
+                <Text style={styles.sectionLabel}>Profile details</Text>
+                <View style={styles.personRow}>
+                  {selectedProfile.photoUrl ? (
+                    <Image source={{ uri: selectedProfile.photoUrl }} style={styles.overlayProfileAvatar} />
+                  ) : (
+                    <View style={styles.overlayProfileAvatarFallback}>
+                      <Text style={styles.overlayProfileAvatarFallbackText}>U</Text>
+                    </View>
+                  )}
+                  <View>
+                    <Text style={styles.postName}>{selectedProfile.name}</Text>
+                    <Text style={styles.postMeta}>
+                      Reg. no.: {selectedProfile.registrationNumber ?? "N/A"}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            ) : null}
+          </Pressable>
         </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={onDiscoverPress}>
-          <Text style={ridePickStyles.tabText}>Discover</Text>
-        </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => router.push("/host")}>
-          <Text style={ridePickStyles.tabText}>Post</Text>
-        </Pressable>
-        <Pressable style={ridePickStyles.tabItem} onPress={() => router.push("/profile")}>
-          <Text style={ridePickStyles.tabText}>Profile</Text>
-        </Pressable>
-      </View>
+      </Modal>
+
     </View>
   );
 }
@@ -204,7 +277,7 @@ const ridePickStyles = StyleSheet.create({
   },
   boardContent: {
     paddingTop: 10,
-    paddingBottom: 110,
+    paddingBottom: 32,
   },
   greetingWrap: {
     width: "100%",
@@ -215,13 +288,13 @@ const ridePickStyles = StyleSheet.create({
   greetingSmall: {
     color: "#C7CDD9",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   greetingName: {
     color: "#F3F4F6",
     fontSize: 38,
     lineHeight: 42,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   heroCard: {
     width: "100%",
@@ -237,12 +310,12 @@ const ridePickStyles = StyleSheet.create({
   heroTitle: {
     color: "#EFF6FF",
     fontSize: 23,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   heroSubtitle: {
     color: "#DCEBFF",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   heroActionRow: {
     flexDirection: "row",
@@ -261,19 +334,10 @@ const ridePickStyles = StyleSheet.create({
     backgroundColor: "#E8EFF7",
     borderColor: "#E8EFF7",
   },
-  heroActionSecondary: {
-    backgroundColor: "transparent",
-    borderColor: "#8DB7E8",
-  },
   heroActionPrimaryText: {
     color: "#1F67BC",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
-  },
-  heroActionSecondaryText: {
-    color: "#EAF3FF",
-    fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterBold",
   },
   sectionTitle: {
     width: "100%",
@@ -282,7 +346,7 @@ const ridePickStyles = StyleSheet.create({
     color: "#AEB5C0",
     fontSize: 14,
     letterSpacing: 0.6,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     marginBottom: 8,
   },
   filterRow: {
@@ -309,7 +373,7 @@ const ridePickStyles = StyleSheet.create({
   filterChipText: {
     color: "#D1D5DB",
     fontSize: 14,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   filterChipTextActive: {
     color: "#1E477A",
@@ -347,18 +411,18 @@ const ridePickStyles = StyleSheet.create({
     color: "#F3F4F6",
     fontSize: 17,
     lineHeight: 22,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
     flex: 1,
   },
   rideMeta: {
     color: "#C7CDD9",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
   },
   riderMeta: {
     color: "#C7CDD9",
     fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     flexShrink: 1,
   },
   riderBlock: {
@@ -375,7 +439,7 @@ const ridePickStyles = StyleSheet.create({
   pricePillText: {
     color: "#335F2D",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    fontFamily: "InterBold",
   },
   requestButton: {
     minHeight: 42,
@@ -389,7 +453,7 @@ const ridePickStyles = StyleSheet.create({
   requestButtonText: {
     color: "#EAF3FF",
     fontSize: 15,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterBold",
   },
   detailsLinkButton: {
     alignSelf: "flex-start",
@@ -398,7 +462,7 @@ const ridePickStyles = StyleSheet.create({
   detailsLinkText: {
     color: "#8DB7E8",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterMedium",
     textDecorationLine: "underline",
   },
   buttonPressed: {
@@ -406,32 +470,5 @@ const ridePickStyles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
-  },
-  bottomTabBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 68,
-    backgroundColor: "#2E2E2E",
-    borderTopWidth: 1,
-    borderTopColor: "#5B6371",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 8,
-  },
-  tabItem: {
-    alignItems: "center",
-    justifyContent: "center",
-    minWidth: 70,
-  },
-  tabText: {
-    color: "#A8B0BD",
-    fontSize: 13,
-    fontFamily: "GoogleSansFlexMedium",
-  },
-  tabTextActive: {
-    color: "#1E6CCC",
   },
 });
