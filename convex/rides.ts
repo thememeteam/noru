@@ -257,6 +257,8 @@ export const createRidePost = mutation({
       totalPrice: args.totalPrice,
       pricePerPerson: args.totalPrice,
       rideStartAt: args.rideStartAt,
+      isStarted: false,
+      startedAt: undefined,
       capacity,
       joinedCount,
       isFull,
@@ -410,6 +412,9 @@ export const joinRidePost = mutation({
     if (ridePost.isStopped) {
       throw new Error("This ride has been stopped.");
     }
+    if (ridePost.isStarted === true) {
+      throw new Error("This ride has already started.");
+    }
     if (ridePost.userId === userId) {
       throw new Error("You cannot join your own ride.");
     }
@@ -493,6 +498,39 @@ export const acceptJoineeForRide = mutation({
     });
 
     await updatePricePerPersonForRide(ctx, args.ridePostId);
+  },
+});
+
+export const startRidePost = mutation({
+  args: {
+    ridePostId: v.id("ridePosts"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const ridePost = await ctx.db.get(args.ridePostId);
+    if (!ridePost) {
+      throw new Error("Ride post not found.");
+    }
+
+    if (ridePost.userId !== userId) {
+      throw new Error("Only the host can start the ride.");
+    }
+    if (ridePost.isStopped) {
+      throw new Error("This ride has already ended.");
+    }
+    if (ridePost.isStarted === true) {
+      return;
+    }
+
+    await ctx.db.patch(args.ridePostId, {
+      isStarted: true,
+      startedAt: Date.now(),
+      isFull: true,
+    });
   },
 });
 
@@ -819,6 +857,7 @@ export const getMyRatingReviews = query({
 export const stopRidePost = mutation({
   args: {
     ridePostId: v.id("ridePosts"),
+    reason: v.union(v.literal("cancelled"), v.literal("ended")),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -838,7 +877,29 @@ export const stopRidePost = mutation({
     await ctx.db.patch(args.ridePostId, {
       isStopped: true,
       isFull: true,
+      stopReason: args.reason,
     });
+
+    if (args.reason === "cancelled") {
+      const joins = await ctx.db
+        .query("rideJoins")
+        .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+        .collect();
+
+      await Promise.all(
+        joins.map((join) =>
+          ctx.db.insert("userNotifications", {
+            userId: join.userId,
+            title: "Ride cancelled",
+            message: `${ridePost.riderName} cancelled the ride ${ridePost.startPoint} -> ${ridePost.endPoint}.`,
+            type: "rideRemoved",
+            isRead: false,
+            ridePostId: args.ridePostId,
+            createdAt: Date.now(),
+          }),
+        ),
+      );
+    }
   },
 });
 

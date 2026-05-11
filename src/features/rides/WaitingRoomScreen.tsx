@@ -29,6 +29,7 @@ export function WaitingRoomScreen() {
 
   const onboarding = useQuery(api.onboarding.getOnboardingState);
   const stopRidePost = useMutation(api.rides.stopRidePost);
+  const startRidePost = useMutation(api.rides.startRidePost);
   const acceptJoineeForRide = useMutation(api.rides.acceptJoineeForRide);
   const removeJoineeFromRide = useMutation(api.rides.removeJoineeFromRide);
   const leaveRidePost = useMutation(api.rides.leaveRidePost);
@@ -77,10 +78,8 @@ export function WaitingRoomScreen() {
       return;
     }
     if (joinedRideData.ridePost.isStopped) {
-      if (joinedRideData.joinStatus === "accepted") {
+      if (joinedRideData.ridePost.stopReason === "ended" && joinedRideData.joinStatus === "accepted") {
         router.replace({ pathname: "/feedback", params: { ridePostId } });
-      } else {
-        router.replace("/");
       }
     }
   }, [joinedRideData, ridePostId]);
@@ -107,7 +106,7 @@ export function WaitingRoomScreen() {
   const onStopRide = async (id: string, showFeedback: boolean) => {
     try {
       setStoppingRideId(id);
-      await stopRidePost({ ridePostId: id as Id<"ridePosts"> });
+      await stopRidePost({ ridePostId: id as Id<"ridePosts">, reason: showFeedback ? "ended" : "cancelled" });
       if (showFeedback) {
         router.replace({ pathname: "/feedback", params: { ridePostId: id } });
       } else {
@@ -116,6 +115,20 @@ export function WaitingRoomScreen() {
     } catch (error) {
       Alert.alert(
         "Could not stop ride",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    } finally {
+      setStoppingRideId(null);
+    }
+  };
+
+  const onStartRide = async (id: string) => {
+    try {
+      setStoppingRideId(id);
+      await startRidePost({ ridePostId: id as Id<"ridePosts"> });
+    } catch (error) {
+      Alert.alert(
+        "Could not start ride",
         error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
@@ -337,6 +350,26 @@ export function WaitingRoomScreen() {
                   <Pressable
                     style={({ pressed }) => [
                       waitingStyles.stopRideButton,
+                      waitingStyles.startRideButton,
+                      hostedRideData.ridePost.isStarted === true && waitingStyles.stopRideButtonDisabled,
+                      stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
+                      pressed
+                        && hostedRideData.ridePost.isStarted !== true
+                        && stoppingRideId !== hostedRideData.ridePost._id
+                        && styles.buttonPressed,
+                    ]}
+                    onPress={() => void onStartRide(hostedRideData.ridePost._id)}
+                    disabled={hostedRideData.ridePost.isStarted === true || stoppingRideId === hostedRideData.ridePost._id}>
+                    <Text style={waitingStyles.startRideButtonText}>
+                      {hostedRideData.ridePost.isStarted === true ? "Ride started" : "Start ride"}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <View style={waitingStyles.stopRideRow}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      waitingStyles.stopRideButton,
                       waitingStyles.stopRideButtonSecondary,
                       stoppingRideId === hostedRideData.ridePost._id && waitingStyles.stopRideButtonDisabled,
                       pressed && stoppingRideId !== hostedRideData.ridePost._id && styles.buttonPressed,
@@ -379,6 +412,11 @@ export function WaitingRoomScreen() {
                         <Text style={[styles.postMeta, waitingStyles.metaText]}>
                           {VEHICLE_LABELS[joinedRideData.ridePost.vehicleType]} · {timeLabel} · {priceLabel}
                         </Text>
+                        {joinedRideData.ridePost.isStarted === true ? (
+                          <View style={waitingStyles.startedPill}>
+                            <Text style={waitingStyles.startedPillText}>Ride started - entries closed</Text>
+                          </View>
+                        ) : null}
                       </View>
                     );
                   })()
@@ -585,6 +623,10 @@ const waitingStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  startRideButton: {
+    borderColor: "#86EFAC",
+    backgroundColor: "#DCFCE7",
+  },
   stopRideButtonSecondary: {
     borderColor: "#C3CAD4",
     backgroundColor: "#E9EDF3",
@@ -594,10 +636,28 @@ const waitingStyles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "GoogleSansFlexMedium",
   },
+  startRideButtonText: {
+    color: "#0B4A24",
+    fontSize: 17,
+    fontFamily: "GoogleSansFlexMedium",
+  },
   stopRideButtonTextSecondary: {
     color: "#2B3A4A",
   },
   stopRideButtonDisabled: {
     opacity: 0.6,
+  },
+  startedPill: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    borderRadius: 999,
+    backgroundColor: "#DCFCE7",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  startedPillText: {
+    color: "#166534",
+    fontSize: 12,
+    fontFamily: "GoogleSansFlexMedium",
   },
 });

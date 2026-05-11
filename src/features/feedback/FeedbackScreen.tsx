@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
+import { useKeyboardAwareScroll } from "../../lib/useKeyboardAwareScroll";
 import { useAppStyles } from "../theme/AppTheme";
 
 const FEEDBACK_TAGS = ["Punctual", "Good music", "Friendly", "Smooth ride"];
@@ -24,6 +25,15 @@ export function FeedbackScreen() {
   const [selectedTagsByUser, setSelectedTagsByUser] = useState<Record<string, string[]>>({});
   const [elseByUser, setElseByUser] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const noteInputRefs = useRef<Record<string, React.RefObject<TextInput>>>({});
+  const { scrollViewRef, onScroll, onLayout, onInputFocus } = useKeyboardAwareScroll();
+
+  const getNoteInputRef = (key: string) => {
+    if (!noteInputRefs.current[key]) {
+      noteInputRefs.current[key] = React.createRef<TextInput>();
+    }
+    return noteInputRefs.current[key];
+  };
 
   const canSubmit = useMemo(() => {
     if (isSubmitting || !feedbackTargets || feedbackTargets.targets.length === 0) {
@@ -84,7 +94,13 @@ export function FeedbackScreen() {
       style={styles.screenContainer}
       behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.boardContent}
+          keyboardShouldPersistTaps="handled"
+          onScroll={onScroll}
+          onLayout={onLayout}
+          scrollEventThrottle={16}>
           <View style={styles.card}>
             <Text style={styles.title}>Ride feedback</Text>
             {feedbackTargets === undefined ? (
@@ -136,6 +152,8 @@ export function FeedbackScreen() {
                         style={[styles.input, styles.feedbackTextArea]}
                         value={elseByUser[key] ?? ""}
                         onChangeText={(value) => setElseByUser((prev) => ({ ...prev, [key]: value }))}
+                        ref={getNoteInputRef(key)}
+                        onFocus={() => onInputFocus(getNoteInputRef(key))}
                         placeholder="e.g. always on time, easy to coordinate..."
                         placeholderTextColor="#7B879C"
                         multiline

@@ -1,12 +1,13 @@
 import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
+import { useKeyboardAwareScroll } from "../../lib/useKeyboardAwareScroll";
 import { useAppStyles } from "../theme/AppTheme";
 
 export function ReportUserScreen() {
@@ -25,6 +26,9 @@ export function ReportUserScreen() {
   const [selectedRidePostId, setSelectedRidePostId] = useState<string | null>(ridePostId ?? null);
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const reportedNameRef = useRef<TextInput>(null);
+  const reasonRef = useRef<TextInput>(null);
+  const { scrollViewRef, onScroll, onLayout, onInputFocus } = useKeyboardAwareScroll();
   const suggestions = useQuery(api.moderation.getReportTargetSuggestions, {
     keyword: reportedName,
   }) ?? [];
@@ -71,7 +75,7 @@ export function ReportUserScreen() {
       });
 
       if (stopRideOnSubmit && ridePostId) {
-        await stopRidePost({ ridePostId: ridePostId as Id<"ridePosts"> });
+        await stopRidePost({ ridePostId: ridePostId as Id<"ridePosts">, reason: "cancelled" });
       }
 
       if (stopRideOnSubmit && ridePostId) {
@@ -104,7 +108,13 @@ export function ReportUserScreen() {
       style={styles.screenContainer}
       behavior={Platform.OS === "ios" ? "padding" : "height"}>
       <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.boardContent} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.boardContent}
+          keyboardShouldPersistTaps="handled"
+          onScroll={onScroll}
+          onLayout={onLayout}
+          scrollEventThrottle={16}>
           <View style={styles.card}>
             <Text style={styles.title}>Report user</Text>
             <Text style={styles.description}>Submit an incident report for another user.</Text>
@@ -117,6 +127,8 @@ export function ReportUserScreen() {
                 setReportedName(value);
                 setSelectedReportedUserId(null);
               }}
+              ref={reportedNameRef}
+              onFocus={() => onInputFocus(reportedNameRef)}
               placeholder="Enter the user's name"
               placeholderTextColor="#7B879C"
             />
@@ -177,6 +189,8 @@ export function ReportUserScreen() {
               style={[styles.input, styles.feedbackTextArea]}
               value={reason}
               onChangeText={setReason}
+              ref={reasonRef}
+              onFocus={() => onInputFocus(reasonRef)}
               placeholder="Describe what happened"
               placeholderTextColor="#7B879C"
               multiline
