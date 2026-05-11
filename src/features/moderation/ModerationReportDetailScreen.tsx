@@ -60,7 +60,7 @@ export function ModerationReportDetailScreen() {
   if (!access.isAdmin) {
     return (
       <View style={styles.screenContainer}>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
           <View style={styles.card}>
             <Text style={styles.title}>Moderation</Text>
             <Text style={styles.description}>Admin access required for this page.</Text>
@@ -73,7 +73,7 @@ export function ModerationReportDetailScreen() {
   if (!reportId || !selectedReport) {
     return (
       <View style={styles.screenContainer}>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>Report detail</Text>
             <Text style={styles.description}>This report is unavailable or no longer exists.</Text>

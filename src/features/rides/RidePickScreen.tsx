@@ -5,9 +5,9 @@ import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } fr
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { deriveDisplayName } from "../../lib/userDisplay";
+import { deriveDisplayName, getAvatarInitial } from "../../lib/userDisplay";
 import { useAppStyles } from "../theme/AppTheme";
-import { VEHICLE_LABELS } from "./constants";
+import { VEHICLE_LABELS, VEHICLE_OPTIONS } from "./constants";
 
 function formatRideTime(rideStartAt?: number | null) {
   if (!rideStartAt || !Number.isFinite(rideStartAt)) {
@@ -33,6 +33,9 @@ export function RidePickScreen() {
 
   const [joiningRideId, setJoiningRideId] = useState<string | null>(null);
   const [discoverTargetY, setDiscoverTargetY] = useState(0);
+  const [vehicleFilter, setVehicleFilter] = useState<string | null>(null);
+  const [womenOnlyFilter, setWomenOnlyFilter] = useState(false);
+  const [quietRideFilter, setQuietRideFilter] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{
     name: string;
     photoUrl: string | null;
@@ -40,6 +43,9 @@ export function RidePickScreen() {
   } | null>(null);
   const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
   const firstName = displayName.split(" ")[0] || "Student";
+  const avatarInitial = getAvatarInitial(displayName);
+  const userGender = (onboardingState as any)?.gender as string | null | undefined;
+  const canSeeWomenOnly = userGender === "female" || userGender === "nonBinary";
   const now = new Date();
   const minutesNow = now.getHours() * 60 + now.getMinutes();
   const dayGreeting = minutesNow <= 11 * 60
@@ -66,7 +72,7 @@ export function RidePickScreen() {
     try {
       setJoiningRideId(ridePostId);
       await joinRidePost({ ridePostId: ridePostId as Id<"ridePosts"> });
-      router.replace({ pathname: "/waiting", params: { ridePostId } });
+      router.push({ pathname: "/waiting", params: { ridePostId } });
     } catch (error) {
       Alert.alert(
         "Could not join ride",
@@ -105,8 +111,19 @@ export function RidePickScreen() {
     <View style={[styles.pickScreenContainer, ridePickStyles.screen]}>
       <ScrollView ref={scrollRef} contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
         <View style={ridePickStyles.greetingWrap}>
-          <Text style={ridePickStyles.greetingSmall}>{dayGreeting}</Text>
-          <Text style={ridePickStyles.greetingName}>{firstName}</Text>
+          <View style={ridePickStyles.greetingTextCol}>
+            <Text style={ridePickStyles.greetingSmall}>{dayGreeting}</Text>
+            <Text style={ridePickStyles.greetingName}>{firstName}</Text>
+          </View>
+          <Pressable onPress={() => router.push("/profile")}>
+            {onboardingState?.profilePhotoUrl ? (
+              <Image source={{ uri: onboardingState.profilePhotoUrl }} style={ridePickStyles.profileAvatar} />
+            ) : (
+              <View style={ridePickStyles.profileAvatarFallback}>
+                <Text style={ridePickStyles.profileAvatarFallbackText}>{avatarInitial}</Text>
+              </View>
+            )}
+          </Pressable>
         </View>
 
         <View style={ridePickStyles.heroCard}>
@@ -124,7 +141,41 @@ export function RidePickScreen() {
           </View>
         </View>
 
-        <Text style={ridePickStyles.sectionTitle} onLayout={(event) => setDiscoverTargetY(event.nativeEvent.layout.y)}>AVAILABLE RIDES</Text>
+        <View style={ridePickStyles.filterSection} onLayout={(event) => setDiscoverTargetY(event.nativeEvent.layout.y)}>
+          <Text style={ridePickStyles.sectionTitle}>AVAILABLE RIDES</Text>
+
+          <View style={ridePickStyles.filterRow}>
+            {canSeeWomenOnly && (
+              <Pressable
+                style={[ridePickStyles.filterChip, womenOnlyFilter && ridePickStyles.filterChipActive]}
+                onPress={() => setWomenOnlyFilter(!womenOnlyFilter)}>
+                <Text style={[ridePickStyles.filterChipText, womenOnlyFilter && ridePickStyles.filterChipTextActive]}>
+                  Women only
+                </Text>
+              </Pressable>
+            )}
+            <Pressable
+              style={[ridePickStyles.filterChip, quietRideFilter && ridePickStyles.filterChipActive]}
+              onPress={() => setQuietRideFilter(!quietRideFilter)}>
+              <Text style={[ridePickStyles.filterChipText, quietRideFilter && ridePickStyles.filterChipTextActive]}>
+                Quiet ride
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={ridePickStyles.filterRow}>
+            {VEHICLE_OPTIONS.map((option) => (
+              <Pressable
+                key={option}
+                style={[ridePickStyles.filterChip, vehicleFilter === option && ridePickStyles.filterChipActive]}
+                onPress={() => setVehicleFilter(vehicleFilter === option ? null : option)}>
+                <Text style={[ridePickStyles.filterChipText, vehicleFilter === option && ridePickStyles.filterChipTextActive]}>
+                  {VEHICLE_LABELS[option]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {activeHostedRide ? (
           <View style={ridePickStyles.rideCard}>
@@ -154,90 +205,88 @@ export function RidePickScreen() {
           </View>
         ) : null}
 
-        {posts.length === 0 ? (
-          <Text style={[styles.description, ridePickStyles.description]}>No joinable rides right now.</Text>
-        ) : (
-          <View style={styles.postList}>
-            {posts.map((post) => {
-              const seatsLeft = Math.max(0, post.capacity - post.joinedCount);
-              const totalPrice = (post as any).totalPrice as number | undefined;
-              const rideStartAt = (post as any).rideStartAt as number | undefined;
-              const timeLabel = formatRideTime(rideStartAt) ?? "8:30 AM";
-              const priceLabel = totalPrice && Number.isFinite(totalPrice)
-                ? `fare: ${totalPrice}`
-                : "fare: TBD";
-              return (
-                <View key={post._id} style={ridePickStyles.rideCard}>
-                  <View style={ridePickStyles.rideHeaderRow}>
-                    <Text style={ridePickStyles.rideRoute}>{post.startPoint} → {post.endPoint}</Text>
-                    <View style={ridePickStyles.pricePill}>
-                      <Text style={ridePickStyles.pricePillText}>{priceLabel}</Text>
+        {(() => {
+          const filteredPosts = posts.filter((post) => {
+            if (vehicleFilter && post.vehicleType !== vehicleFilter) return false;
+            if (womenOnlyFilter && !(post as any).womenOnly) return false;
+            if (quietRideFilter && !(post as any).quietRide) return false;
+            return true;
+          });
+
+          if (posts.length === 0) {
+            return <Text style={[styles.description, ridePickStyles.description]}>No joinable rides right now.</Text>;
+          }
+          if (filteredPosts.length === 0) {
+            return <Text style={[styles.description, ridePickStyles.description]}>No rides match the selected filters.</Text>;
+          }
+
+          return (
+            <View style={styles.postList}>
+              {filteredPosts.map((post) => {
+                const seatsLeft = Math.max(0, post.capacity - post.joinedCount);
+                const totalPrice = (post as any).totalPrice as number | undefined;
+                const rideStartAt = (post as any).rideStartAt as number | undefined;
+                const timeLabel = formatRideTime(rideStartAt) ?? "8:30 AM";
+                const priceLabel = totalPrice && Number.isFinite(totalPrice)
+                  ? `fare: ₹${totalPrice}`
+                  : "fare: TBD";
+                return (
+                  <View
+                    key={post._id}
+                    style={ridePickStyles.rideCard}>
+                    <View style={ridePickStyles.rideHeaderRow}>
+                      <Text style={ridePickStyles.rideRoute}>{post.startPoint} → {post.endPoint}</Text>
+                      <View style={ridePickStyles.pricePill}>
+                        <Text style={ridePickStyles.pricePillText}>{priceLabel}</Text>
+                      </View>
                     </View>
-                  </View>
 
-                  <Text style={ridePickStyles.rideMeta}>
-                    {timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left
-                  </Text>
+                    <Text style={ridePickStyles.rideMeta}>
+                      {timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left
+                    </Text>
 
-                  <View style={ridePickStyles.rideFooterRow}>
-                    <View style={[styles.personRow, ridePickStyles.riderBlock]}>
+                    <View style={ridePickStyles.rideFooterRow}>
+                      <View style={[styles.personRow, ridePickStyles.riderBlock]}>
+                        <Pressable
+                          onPress={() =>
+                            setSelectedProfile({
+                              name: post.riderName,
+                              photoUrl: post.riderPhotoUrl ?? null,
+                              registrationNumber: extractRegistrationNumber(post.riderName, null),
+                            })
+                          }>
+                          {post.riderPhotoUrl ? (
+                            <Image source={{ uri: post.riderPhotoUrl }} style={styles.personAvatarSmall} />
+                          ) : (
+                            <View style={styles.personAvatarFallbackSmall}>
+                              <Text style={styles.personAvatarFallbackTextSmall}>
+                                {post.riderName.charAt(0).toUpperCase()}
+                              </Text>
+                            </View>
+                          )}
+                        </Pressable>
+                        <Text style={ridePickStyles.riderMeta} numberOfLines={1}>{post.riderName} · 4.8</Text>
+                      </View>
+
                       <Pressable
-                        onPress={() =>
-                          setSelectedProfile({
-                            name: post.riderName,
-                            photoUrl: post.riderPhotoUrl ?? null,
-                            registrationNumber: extractRegistrationNumber(post.riderName, null),
-                          })
-                        }>
-                        {post.riderPhotoUrl ? (
-                          <Image source={{ uri: post.riderPhotoUrl }} style={styles.personAvatarSmall} />
-                        ) : (
-                          <View style={styles.personAvatarFallbackSmall}>
-                            <Text style={styles.personAvatarFallbackTextSmall}>
-                              {post.riderName.charAt(0).toUpperCase()}
-                            </Text>
-                          </View>
-                        )}
+                        style={({ pressed }) => [
+                          ridePickStyles.requestButton,
+                          (joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonDisabled,
+                          pressed && !(joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonPressed,
+                        ]}
+                        onPress={() => void onJoinRide(post._id)}
+                        disabled={joiningRideId === post._id || !!activeJoinedRide}>
+                        <Text style={ridePickStyles.requestButtonText}>
+                          {joiningRideId === post._id ? "Joining..." : "Request"}
+                        </Text>
                       </Pressable>
-                      <Text style={ridePickStyles.riderMeta} numberOfLines={1}>{post.riderName} · 4.8</Text>
                     </View>
-
-                    <Pressable
-                      style={({ pressed }) => [
-                        ridePickStyles.requestButton,
-                        (joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonDisabled,
-                        pressed && !(joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonPressed,
-                      ]}
-                      onPress={() => void onJoinRide(post._id)}
-                      disabled={joiningRideId === post._id || !!activeJoinedRide}>
-                      <Text style={ridePickStyles.requestButtonText}>
-                        {joiningRideId === post._id ? "Joining..." : "Request"}
-                      </Text>
-                    </Pressable>
                   </View>
-                    <Pressable
-                      onPress={() =>
-                        router.push({
-                          pathname: "/ride-details",
-                          params: {
-                            ridePostId: String(post._id),
-                            startPoint: post.startPoint,
-                            endPoint: post.endPoint,
-                            riderName: post.riderName,
-                            riderPhotoUrl: post.riderPhotoUrl ?? undefined,
-                            totalPrice: totalPrice ? String(totalPrice) : undefined,
-                            rideStartAt: rideStartAt ? String(rideStartAt) : undefined,
-                          },
-                        })
-                      }
-                      style={ridePickStyles.detailsLinkButton}>
-                      <Text style={ridePickStyles.detailsLinkText}>View ride details</Text>
-                    </Pressable>
-                </View>
-              );
-            })}
-          </View>
-        )}
+                );
+              })}
+            </View>
+          );
+        })()}
       </ScrollView>
 
       <Modal visible={!!selectedProfile} transparent animationType="fade" onRequestClose={() => setSelectedProfile(null)}>
@@ -276,14 +325,20 @@ const ridePickStyles = StyleSheet.create({
     backgroundColor: "#2E2E2E",
   },
   boardContent: {
-    paddingTop: 10,
+    paddingTop: 20,
     paddingBottom: 32,
   },
   greetingWrap: {
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
+  },
+  greetingTextCol: {
+    flex: 1,
   },
   greetingSmall: {
     color: "#C7CDD9",
@@ -294,6 +349,28 @@ const ridePickStyles = StyleSheet.create({
     color: "#F3F4F6",
     fontSize: 38,
     lineHeight: 42,
+    fontFamily: "InterBold",
+  },
+  profileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "#60A5FA",
+  },
+  profileAvatarFallback: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "#60A5FA",
+    backgroundColor: "#1F3654",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileAvatarFallbackText: {
+    color: "#DBEAFE",
+    fontSize: 14,
     fontFamily: "InterBold",
   },
   heroCard: {
@@ -339,24 +416,22 @@ const ridePickStyles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "InterBold",
   },
-  sectionTitle: {
+  filterSection: {
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
+    gap: 6,
+  },
+  sectionTitle: {
     color: "#AEB5C0",
     fontSize: 14,
     letterSpacing: 0.6,
     fontFamily: "InterBold",
-    marginBottom: 8,
   },
   filterRow: {
-    width: "100%",
-    maxWidth: 760,
-    alignSelf: "center",
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 10,
   },
   filterChip: {
     borderRadius: 999,
@@ -367,8 +442,8 @@ const ridePickStyles = StyleSheet.create({
     paddingVertical: 7,
   },
   filterChipActive: {
-    backgroundColor: "#EAF3FF",
-    borderColor: "#EAF3FF",
+    backgroundColor: "#1F3654",
+    borderColor: "#60A5FA",
   },
   filterChipText: {
     color: "#D1D5DB",
@@ -376,7 +451,7 @@ const ridePickStyles = StyleSheet.create({
     fontFamily: "InterMedium",
   },
   filterChipTextActive: {
-    color: "#1E477A",
+    color: "#DBEAFE",
   },
   description: {
     color: "#D1D5DB",
@@ -432,12 +507,12 @@ const ridePickStyles = StyleSheet.create({
   },
   pricePill: {
     borderRadius: 999,
-    backgroundColor: "#E5F7D9",
+    backgroundColor: "#052E16",
     paddingHorizontal: 10,
     paddingVertical: 5,
   },
   pricePillText: {
-    color: "#335F2D",
+    color: "#86EFAC",
     fontSize: 12,
     fontFamily: "InterBold",
   },
@@ -454,16 +529,6 @@ const ridePickStyles = StyleSheet.create({
     color: "#EAF3FF",
     fontSize: 15,
     fontFamily: "InterBold",
-  },
-  detailsLinkButton: {
-    alignSelf: "flex-start",
-    paddingVertical: 2,
-  },
-  detailsLinkText: {
-    color: "#8DB7E8",
-    fontSize: 12,
-    fontFamily: "InterMedium",
-    textDecorationLine: "underline",
   },
   buttonPressed: {
     opacity: 0.88,

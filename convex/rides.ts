@@ -221,6 +221,9 @@ export const createRidePost = mutation({
     ),
     totalPrice: v.number(),
     rideStartAt: v.number(),
+    womenOnly: v.optional(v.boolean()),
+    quietRide: v.optional(v.boolean()),
+    capacity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -242,9 +245,23 @@ export const createRidePost = mutation({
       throw new Error("Ride start time is required.");
     }
 
+    if (args.womenOnly) {
+      const profile = await ctx.db
+        .query("studentProfiles")
+        .withIndex("by_user_id", (q) => q.eq("userId", userId))
+        .first();
+      if (profile?.gender !== "female" && profile?.gender !== "nonBinary") {
+        throw new Error("Women-only rides can only be created by female or non-binary riders.");
+      }
+    }
+
     const user = await ctx.db.get(userId);
     const riderName = user?.name?.trim() || user?.email?.trim() || "Student";
-    const capacity = VEHICLE_OPTIONS[args.vehicleType].capacity;
+    const maxCapacity = VEHICLE_OPTIONS[args.vehicleType].capacity;
+    const capacity = args.capacity ?? maxCapacity;
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > maxCapacity) {
+      throw new Error(`Capacity must be between 1 and ${maxCapacity} for this vehicle type.`);
+    }
     const joinedCount = 0;
     const isFull = joinedCount >= capacity;
 
@@ -263,6 +280,8 @@ export const createRidePost = mutation({
       joinedCount,
       isFull,
       isStopped: false,
+      womenOnly: args.womenOnly ?? false,
+      quietRide: args.quietRide ?? false,
       createdAt: Date.now(),
     });
   },

@@ -32,6 +32,7 @@ export const getOnboardingState = query({
       universityEmail: user?.email ?? null,
       displayName: user?.name ?? null,
       profilePhotoUrl,
+      gender: profile?.gender ?? null,
     };
   },
 });
@@ -81,6 +82,7 @@ export const completeStudentOnboarding = mutation({
       universityEmail: user.email.toLowerCase(),
       profilePhotoStorageId: args.profilePhotoStorageId,
       completedAt: Date.now(),
+      gender: 'female'
     });
   },
 });

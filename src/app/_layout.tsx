@@ -62,7 +62,7 @@ function AppNavigator() {
             headerRight: () => <HeaderProfileActions />,
             contentStyle: { backgroundColor: colors.contentBackground },
           }}>
-          <Stack.Screen name="index" options={{ title: "Noru", headerBackVisible: false }} />
+          <Stack.Screen name="index" options={{ headerShown: false, headerBackVisible: false }} />
           <Stack.Screen name="host" options={{ title: "Host a ride" }} />
           <Stack.Screen name="ride-details" options={{ title: "Ride details" }} />
           <Stack.Screen name="waiting" options={{ title: "Waiting room" }} />
@@ -72,6 +72,7 @@ function AppNavigator() {
           <Stack.Screen name="moderation" options={{ title: "Moderation" }} />
           <Stack.Screen name="moderation/[reportId]" options={{ title: "Report detail" }} />
           <Stack.Screen name="profile" options={{ title: "Profile", headerRight: () => null }} />
+          <Stack.Screen name="ride-history" options={{ title: "Ride history", headerRight: () => null }} />
         </Stack>
       </View>
     </ConvexAuthProvider>

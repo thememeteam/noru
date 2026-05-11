@@ -403,7 +403,7 @@ export const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "600",
     fontSize: 15,
     fontFamily: "InterMedium",
   },

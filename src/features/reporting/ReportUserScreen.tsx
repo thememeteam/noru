@@ -107,7 +107,7 @@ export function ReportUserScreen() {
     <KeyboardAvoidingView
       style={styles.screenContainer}
       behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
         <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.boardContent}

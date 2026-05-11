@@ -2,11 +2,12 @@ import { useMutation } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { api } from "../../../convex/_generated/api";
-import type { Id } from "../../../convex/_generated/dataModel";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { useAppStyles } from "../theme/AppTheme";
+import { VEHICLE_LABELS, type VehicleType } from "./constants";
 
 export function RideDetailsScreen() {
   const styles = useAppStyles();
@@ -16,20 +17,38 @@ export function RideDetailsScreen() {
     endPoint?: string;
     riderName?: string;
     riderPhotoUrl?: string;
+    vehicleType?: string;
+    seatsLeft?: string;
     totalPrice?: string;
     rideStartAt?: string;
+    womenOnly?: string;
+    quietRide?: string;
   }>();
+
   const startPoint = params.startPoint ?? "Start point";
   const endPoint = params.endPoint ?? "Destination";
   const riderName = params.riderName ?? "Host";
   const riderPhotoUrl = params.riderPhotoUrl ?? null;
   const ridePostId = params.ridePostId;
+  const vehicleLabel = params.vehicleType
+    ? VEHICLE_LABELS[params.vehicleType as VehicleType] ?? params.vehicleType
+    : null;
+  const seatsLeft = params.seatsLeft !== undefined ? Number(params.seatsLeft) : null;
   const totalPrice = params.totalPrice ? Number(params.totalPrice) : null;
-  const fareLabel = Number.isFinite(totalPrice) ? `fare: ${totalPrice}` : "fare: TBD";
   const rideStartAt = params.rideStartAt ? Number(params.rideStartAt) : null;
-  const timeLabel = Number.isFinite(rideStartAt)
-    ? new Date(rideStartAt as number).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
-    : "Time TBD";
+  const womenOnly = params.womenOnly === "1";
+  const quietRide = params.quietRide === "1";
+
+  const timeLabel = Number.isFinite(rideStartAt) && rideStartAt !== null
+    ? new Date(rideStartAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+    : null;
+
+  const metaParts = [
+    vehicleLabel,
+    timeLabel,
+    totalPrice && Number.isFinite(totalPrice) ? `₹${totalPrice}` : null,
+  ].filter(Boolean);
+
   const joinRidePost = useMutation(api.rides.joinRidePost);
   const [isJoining, setIsJoining] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<{
@@ -38,17 +57,11 @@ export function RideDetailsScreen() {
     registrationNumber: string | null;
   } | null>(null);
 
-  const extractRegistrationNumber = (name: string, email?: string | null) => {
+  const extractRegistrationNumber = (name: string) => {
     const bracketMatch = name.match(/\[([^\]]+)\]/);
-    if (bracketMatch && bracketMatch[1]) {
+    if (bracketMatch?.[1]) {
       return bracketMatch[1].trim();
     }
-
-    if (email) {
-      const emailHandle = email.split("@")[0]?.trim();
-      return emailHandle || null;
-    }
-
     return null;
   };
 
@@ -61,7 +74,7 @@ export function RideDetailsScreen() {
     try {
       setIsJoining(true);
       await joinRidePost({ ridePostId: ridePostId as Id<"ridePosts"> });
-      router.replace({ pathname: "/waiting", params: { ridePostId } });
+      router.push({ pathname: "/waiting", params: { ridePostId } });
     } catch (error) {
       Alert.alert(
         "Could not join ride",
@@ -74,70 +87,84 @@ export function RideDetailsScreen() {
 
   return (
     <View style={styles.screenContainer}>
-      <SafeAreaView style={styles.safeArea}>  
-        <ScrollView contentContainerStyle={styles.boardContent}>
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Ride details</Text>
+      <SafeAreaView edges={["bottom"]} style={[styles.safeArea, { paddingHorizontal: 0 }]}>
+        <ScrollView contentContainerStyle={[styles.boardContent, { paddingHorizontal: 16 }]}>
 
-            <View style={detailStyles.mapCard}>
-              <Text style={detailStyles.mapTitle}>Route preview</Text>
-              <Text style={detailStyles.mapSubtitle}>{startPoint} → {endPoint}</Text>
-            </View>
-
-            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Departure</Text><Text style={styles.postName}>{timeLabel}</Text></View>
-            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Vehicle</Text><Text style={styles.postName}>Auto (booked by host)</Text></View>
-            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Seats available</Text><Text style={styles.postName}>2 of 3</Text></View>
-            <View style={detailStyles.infoRow}><Text style={styles.postMeta}>Fare</Text><Text style={detailStyles.farePill}>{fareLabel}</Text></View>
-
-            <Text style={styles.sectionLabel}>Host</Text>
-            <View style={styles.postItem}>
-              <View style={styles.personRow}>
-                <Pressable
-                  onPress={() =>
-                    setSelectedProfile({
-                      name: riderName,
-                      photoUrl: riderPhotoUrl,
-                      registrationNumber: extractRegistrationNumber(riderName, null),
-                    })
-                  }>
-                  {riderPhotoUrl ? (
-                    <Image source={{ uri: riderPhotoUrl }} style={styles.personAvatarSmall} />
-                  ) : (
-                    <View style={styles.personAvatarFallbackSmall}>
-                      <Text style={styles.personAvatarFallbackTextSmall}>{riderName.charAt(0).toUpperCase()}</Text>
-                    </View>
-                  )}
-                </Pressable>
-                <Text style={styles.postName}>{riderName}</Text>
+          <View style={detailStyles.summaryCard}>
+            <Text style={detailStyles.routeText}>{startPoint} → {endPoint}</Text>
+            {metaParts.length > 0 && (
+              <Text style={detailStyles.metaText}>{metaParts.join(" · ")}</Text>
+            )}
+            {(seatsLeft !== null || womenOnly || quietRide) && (
+              <View style={detailStyles.pillRow}>
+                {seatsLeft !== null && (
+                  <View style={detailStyles.seatsPill}>
+                    <Text style={detailStyles.seatsPillText}>{seatsLeft} seats left</Text>
+                  </View>
+                )}
+                {womenOnly && (
+                  <View style={detailStyles.womenOnlyPill}>
+                    <Text style={detailStyles.womenOnlyPillText}>Women only</Text>
+                  </View>
+                )}
+                {quietRide && (
+                  <View style={detailStyles.quietPill}>
+                    <Text style={detailStyles.quietPillText}>Quiet ride</Text>
+                  </View>
+                )}
               </View>
-              <View style={styles.quickRow}>
-                <Pressable onPress={() => {}} style={detailStyles.tagChip}><Text style={detailStyles.tagChipText}>Punctual</Text></Pressable>
-                <Pressable onPress={() => {}} style={detailStyles.tagChip}><Text style={detailStyles.tagChipText}>Good music</Text></Pressable>
-              </View>
-            </View>
-
-            <Pressable
-              style={({ pressed }) => [
-                detailStyles.requestButton,
-                isJoining && detailStyles.requestButtonDisabled,
-                pressed && !isJoining && detailStyles.requestButtonPressed,
-              ]}
-              onPress={() => void onJoinRide()}
-              disabled={isJoining}>
-              <Text style={detailStyles.requestButtonText}>
-                {isJoining ? "Requesting..." : "Request to join"}
-              </Text>
-            </Pressable>
-
-            <Text style={styles.postMeta}>Payment is settled peer-to-peer outside the app.</Text>
+            )}
           </View>
+
+          <Text style={detailStyles.sectionHeading}>HOST</Text>
+          <View style={detailStyles.hostCard}>
+            <Pressable
+              onPress={() =>
+                setSelectedProfile({
+                  name: riderName,
+                  photoUrl: riderPhotoUrl,
+                  registrationNumber: extractRegistrationNumber(riderName),
+                })
+              }>
+              {riderPhotoUrl ? (
+                <Image source={{ uri: riderPhotoUrl }} style={styles.personAvatarSmall} />
+              ) : (
+                <View style={styles.personAvatarFallbackSmall}>
+                  <Text style={styles.personAvatarFallbackTextSmall}>
+                    {riderName.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <Text style={styles.postName}>{riderName}</Text>
+          </View>
+
+          <Pressable
+            style={({ pressed }) => [
+              detailStyles.joinButton,
+              isJoining && styles.buttonDisabled,
+              pressed && !isJoining && styles.buttonPressed,
+            ]}
+            onPress={() => void onJoinRide()}
+            disabled={isJoining}>
+            <Text style={detailStyles.joinButtonText}>
+              {isJoining ? "Requesting..." : "Request to join"}
+            </Text>
+          </Pressable>
+
+          <Text style={detailStyles.footnote}>Payment is settled peer-to-peer outside the app.</Text>
+
         </ScrollView>
       </SafeAreaView>
 
-      <Modal visible={!!selectedProfile} transparent animationType="fade" onRequestClose={() => setSelectedProfile(null)}>
+      <Modal
+        visible={!!selectedProfile}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedProfile(null)}>
         <Pressable style={styles.overlayBackdrop} onPress={() => setSelectedProfile(null)}>
           <Pressable style={styles.overlayCard} onPress={() => {}}>
-            {selectedProfile ? (
+            {selectedProfile && (
               <>
                 <Text style={styles.sectionLabel}>Profile details</Text>
                 <View style={styles.personRow}>
@@ -145,7 +172,9 @@ export function RideDetailsScreen() {
                     <Image source={{ uri: selectedProfile.photoUrl }} style={styles.overlayProfileAvatar} />
                   ) : (
                     <View style={styles.overlayProfileAvatarFallback}>
-                      <Text style={styles.overlayProfileAvatarFallbackText}>U</Text>
+                      <Text style={styles.overlayProfileAvatarFallbackText}>
+                        {selectedProfile.name.charAt(0).toUpperCase()}
+                      </Text>
                     </View>
                   )}
                   <View>
@@ -156,7 +185,7 @@ export function RideDetailsScreen() {
                   </View>
                 </View>
               </>
-            ) : null}
+            )}
           </Pressable>
         </Pressable>
       </Modal>
@@ -165,67 +194,96 @@ export function RideDetailsScreen() {
 }
 
 const detailStyles = StyleSheet.create({
-  mapCard: {
+  summaryCard: {
     borderWidth: 1,
-    borderColor: "#9DBA7E",
-    backgroundColor: "#DCEBCE",
-    borderRadius: 10,
-    padding: 10,
-    gap: 4,
+    borderColor: "#4B5563",
+    backgroundColor: "#2A2D33",
+    borderRadius: 14,
+    padding: 12,
+    gap: 6,
   },
-  mapTitle: {
-    color: "#335F2D",
-    fontSize: 13,
-    fontFamily: "GoogleSansFlexBold",
+  routeText: {
+    color: "#F3F4F6",
+    fontSize: 20,
+    lineHeight: 27,
+    fontFamily: "InterBold",
   },
-  mapSubtitle: {
-    color: "#335F2D",
-    fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+  metaText: {
+    color: "#C7CDD9",
+    fontSize: 14,
+    fontFamily: "InterMedium",
   },
-  infoRow: {
+  pillRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 2,
   },
-  farePill: {
-    color: "#335F2D",
-    backgroundColor: "#E5F7D9",
+  seatsPill: {
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    fontSize: 12,
-    fontFamily: "GoogleSansFlexBold",
+    backgroundColor: "#052E16",
   },
-  tagChip: {
+  seatsPillText: {
+    color: "#86EFAC",
+    fontSize: 12,
+    fontFamily: "InterBold",
+  },
+  womenOnlyPill: {
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#8DB7E8",
-    backgroundColor: "#EAF3FF",
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
+    backgroundColor: "#1F3654",
   },
-  tagChipText: {
-    color: "#1E477A",
+  womenOnlyPillText: {
+    color: "#93C5FD",
     fontSize: 12,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterBold",
   },
-  requestButton: {
-    minHeight: 44,
-    borderRadius: 10,
+  quietPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    backgroundColor: "#1A1F2E",
+  },
+  quietPillText: {
+    color: "#818CF8",
+    fontSize: 12,
+    fontFamily: "InterBold",
+  },
+  sectionHeading: {
+    color: "#AEB5C0",
+    fontSize: 13,
+    letterSpacing: 0.6,
+    fontFamily: "InterBold",
+  },
+  hostCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: "#4B5563",
+    backgroundColor: "#2A2D33",
+    borderRadius: 12,
+    padding: 12,
+  },
+  joinButton: {
+    minHeight: 50,
+    borderRadius: 12,
     backgroundColor: "#1E6CCC",
     alignItems: "center",
     justifyContent: "center",
   },
-  requestButtonPressed: {
-    opacity: 0.88,
-  },
-  requestButtonDisabled: {
-    opacity: 0.6,
-  },
-  requestButtonText: {
+  joinButtonText: {
     color: "#EAF3FF",
     fontSize: 16,
-    fontFamily: "GoogleSansFlexMedium",
+    fontFamily: "InterBold",
+  },
+  footnote: {
+    color: "#6B7280",
+    fontSize: 13,
+    fontFamily: "InterMedium",
+    textAlign: "center",
   },
 });

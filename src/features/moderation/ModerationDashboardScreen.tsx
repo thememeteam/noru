@@ -34,7 +34,7 @@ export function ModerationDashboardScreen() {
   if (!access.isAdmin) {
     return (
       <View style={styles.screenContainer}>
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView edges={["bottom"]} style={styles.safeArea}>
           <View style={styles.card}>
             <Text style={styles.title}>Moderation</Text>
             <Text style={styles.description}>Admin access required for this page.</Text>

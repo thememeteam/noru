@@ -35,6 +35,7 @@ export function AppButton({
           styles.buttonText,
           variant === "secondary" && styles.buttonTextSecondary,
           variant === "danger" && styles.buttonTextDanger,
+          { fontFamily: "InterMedium" }
         ]}>
         {title}
       </Text>

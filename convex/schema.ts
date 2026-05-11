@@ -39,6 +39,8 @@ export default defineSchema({
     joinedCount: v.number(),
     isFull: v.boolean(),
     isStopped: v.boolean(),
+    womenOnly: v.optional(v.boolean()),
+    quietRide: v.optional(v.boolean()),
     createdAt: v.number(),
   })
     .index("by_created_at", ["createdAt"])

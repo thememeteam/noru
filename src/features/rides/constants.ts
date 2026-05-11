@@ -9,3 +9,10 @@ export const VEHICLE_LABELS: Record<VehicleType, string> = {
   ownBike: "Own Bike",
   ownCar: "Own Car",
 };
+
+export const VEHICLE_CAPACITIES: Record<VehicleType, number> = {
+  auto: 2,
+  cab: 3,
+  ownBike: 1,
+  ownCar: 3,
+};

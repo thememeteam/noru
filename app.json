@@ -24,21 +24,15 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "softwareKeyboardLayoutMode": "resize"
+      "softwareKeyboardLayoutMode": "resize",
+      "package": "io.github.thememeteam.noru"
     },
     "plugins": [
       "expo-secure-store",
       "expo-router",
       [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Medium.ttf",
-            "./assets/fonts/Google_Sans_Flex/static/GoogleSansFlex_24pt-Bold.ttf"
-          ]
-        }
+        "expo-font"
       ]
     ]
   }
 }
-
