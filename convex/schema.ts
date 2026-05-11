@@ -104,4 +104,11 @@ export default defineSchema({
   })
     .index("by_ride_and_rater_and_ratee", ["ridePostId", "raterUserId", "rateeUserId"])
     .index("by_ratee_user_id", ["rateeUserId"]),
+  rideMessages: defineTable({
+    ridePostId: v.id("ridePosts"),
+    userId: v.id("users"),
+    senderName: v.string(),
+    text: v.string(),
+    createdAt: v.number(),
+  }).index("by_ride_post_id_and_created_at", ["ridePostId", "createdAt"]),
 });

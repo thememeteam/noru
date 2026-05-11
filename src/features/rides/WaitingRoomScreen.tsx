@@ -9,6 +9,7 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS } from "./constants";
+
 function formatRideTime(rideStartAt?: number | null) {
   if (!rideStartAt || !Number.isFinite(rideStartAt)) {
     return null;
@@ -346,6 +347,12 @@ export function WaitingRoomScreen() {
                   </View>
                 )}
 
+                <AppButton
+                  title="Group chat"
+                  onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
+                  variant="secondary"
+                />
+
                 <View style={waitingStyles.stopRideRow}>
                   <Pressable
                     style={({ pressed }) => [
@@ -486,6 +493,14 @@ export function WaitingRoomScreen() {
                       </View>
                     ))}
                   </View>
+                )}
+
+                {joinedRideData.joinStatus === "accepted" && (
+                  <AppButton
+                    title="Group chat"
+                    onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
+                    variant="secondary"
+                  />
                 )}
 
                 <AppButton

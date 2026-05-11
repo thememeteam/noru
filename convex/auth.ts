@@ -1,8 +1,17 @@
 import { convexAuth } from "@convex-dev/auth/server";
-import MicrosoftEntraID from "@auth/core/providers/microsoft-entra-id"
+import MicrosoftEntraID from "@auth/core/providers/microsoft-entra-id";
+import { Anonymous } from "@convex-dev/auth/providers/Anonymous";
 
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
   providers: [
+    Anonymous({
+      profile(params) {
+        if (params.email) {
+          return { email: params.email as string, name: (params.name as string) ?? "Test User", isAnonymous: true };
+        }
+        return { isAnonymous: true, email: null, name: null };
+      },
+    }),
     MicrosoftEntraID({
       clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
       clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,

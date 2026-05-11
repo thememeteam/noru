@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as __tests___helpers from "../__tests__/helpers.js";
 import type * as auth from "../auth.js";
+import type * as chat from "../chat.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
 import type * as onboarding from "../onboarding.js";
@@ -21,7 +23,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  "__tests__/helpers": typeof __tests___helpers;
   auth: typeof auth;
+  chat: typeof chat;
   http: typeof http;
   moderation: typeof moderation;
   onboarding: typeof onboarding;
