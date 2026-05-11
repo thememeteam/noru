@@ -3,7 +3,7 @@
     "name": "noru",
     "slug": "noru",
     "scheme": "noru",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "backgroundColor": "#2E2E2E",
     "icon": "./assets/icon.png",
@@ -25,7 +25,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
-      "package": "io.github.thememeteam.noru"
+      "package": "io.github.thememeteam.noru",
+      "versionCode": 2
     },
     "plugins": [
       "expo-secure-store",

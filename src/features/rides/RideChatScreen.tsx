@@ -35,6 +35,8 @@ export function RideChatScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [messageText, setMessageText] = useState("");
   const listRef = useRef<FlatList<any>>(null);
+  const isAtBottomRef = useRef(true);
+  const SCROLL_THRESHOLD = 40;
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -95,7 +97,16 @@ export function RideChatScreen() {
         keyExtractor={(item) => item._id}
         style={chatStyles.list}
         contentContainerStyle={chatStyles.listContent}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+        onScroll={(e) => {
+            const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+            isAtBottomRef.current = contentOffset.y + layoutMeasurement.height >= contentSize.height - SCROLL_THRESHOLD;
+          }}
+          scrollEventThrottle={100}
+          onContentSizeChange={() => {
+            if (isAtBottomRef.current) {
+              listRef.current?.scrollToEnd({ animated: true });
+            }
+          }}
         ListEmptyComponent={
           messages !== undefined ? (
             <Text style={[styles.description, chatStyles.emptyText]}>No messages yet. Say hi!</Text>
@@ -106,7 +117,7 @@ export function RideChatScreen() {
             {!item.isOwnMessage && (
               <Text style={chatStyles.sender}>{item.senderName}</Text>
             )}
-            <Text style={[chatStyles.messageText, item.isOwnMessage && chatStyles.ownMessageText]}>
+            <Text selectable style={[chatStyles.messageText, item.isOwnMessage && chatStyles.ownMessageText]}>
               {item.text}
             </Text>
           </View>

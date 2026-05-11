@@ -186,7 +186,7 @@ export function RidePickScreen() {
             <Pressable
               style={({ pressed }) => [ridePickStyles.requestButton, pressed && ridePickStyles.buttonPressed]}
               onPress={() =>
-                router.replace({ pathname: "/waiting", params: { ridePostId: activeHostedRide.ridePostId } })
+                router.push({ pathname: "/waiting", params: { ridePostId: activeHostedRide.ridePostId } })
               }>
               <Text style={ridePickStyles.requestButtonText}>Go to waiting room</Text>
             </Pressable>
@@ -198,7 +198,7 @@ export function RidePickScreen() {
             <Pressable
               style={({ pressed }) => [ridePickStyles.requestButton, pressed && ridePickStyles.buttonPressed]}
               onPress={() =>
-                router.replace({ pathname: "/waiting", params: { ridePostId: activeJoinedRide.ridePostId } })
+                router.push({ pathname: "/waiting", params: { ridePostId: activeJoinedRide.ridePostId } })
               }>
               <Text style={ridePickStyles.requestButtonText}>Go to waiting room</Text>
             </Pressable>
