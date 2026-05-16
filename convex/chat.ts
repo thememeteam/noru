@@ -50,10 +50,34 @@ export const getMessages = query({
       .order("asc")
       .take(200);
 
-    return messages.map((msg: any) => ({
-      ...msg,
-      isOwnMessage: msg.userId === userId,
-    }));
+    return await Promise.all(
+      messages.map(async (msg: any) => {
+        const rawReactions = await ctx.db
+          .query("messageReactions")
+          .withIndex("by_message_id", (q) => q.eq("messageId", msg._id))
+          .collect();
+
+        const reactionMap = new Map<string, { count: number; didReact: boolean }>();
+        for (const r of rawReactions) {
+          const entry = reactionMap.get(r.emoji) ?? { count: 0, didReact: false };
+          entry.count += 1;
+          if (r.userId === userId) entry.didReact = true;
+          reactionMap.set(r.emoji, entry);
+        }
+
+        const reactions = Array.from(reactionMap.entries()).map(([emoji, data]) => ({
+          emoji,
+          count: data.count,
+          didReact: data.didReact,
+        }));
+
+        return {
+          ...msg,
+          isOwnMessage: msg.userId === userId,
+          reactions,
+        };
+      }),
+    );
   },
 });
 
@@ -61,6 +85,7 @@ export const sendMessage = mutation({
   args: {
     ridePostId: v.id("ridePosts"),
     text: v.string(),
+    replyToId: v.optional(v.id("rideMessages")),
   },
   handler: async (ctx, args) => {
     const { userId, ridePost } = await assertChatAccess(ctx, args.ridePostId);
@@ -70,15 +95,126 @@ export const sendMessage = mutation({
     if (text.length > 500) throw new Error("Message too long.");
     if (ridePost.isStopped) throw new Error("This ride has ended.");
 
+    let replyToText: string | undefined;
+    let replyToSenderName: string | undefined;
+    if (args.replyToId) {
+      const replyTarget = await ctx.db.get(args.replyToId);
+      if (replyTarget && replyTarget.ridePostId === args.ridePostId) {
+        replyToText = replyTarget.text;
+        replyToSenderName = replyTarget.senderName;
+      }
+    }
+
     const user = await ctx.db.get(userId);
     const senderName = user?.name?.trim() || user?.email?.trim() || "Student";
+
+    const existingTyping = await ctx.db
+      .query("typingIndicators")
+      .withIndex("by_user_and_ride", (q) => q.eq("userId", userId).eq("ridePostId", args.ridePostId))
+      .first();
+    if (existingTyping) {
+      await ctx.db.delete(existingTyping._id);
+    }
 
     await ctx.db.insert("rideMessages", {
       ridePostId: args.ridePostId,
       userId,
       senderName,
       text,
+      replyToId: args.replyToId,
+      replyToText,
+      replyToSenderName,
       createdAt: Date.now(),
     });
+  },
+});
+
+export const toggleReaction = mutation({
+  args: {
+    ridePostId: v.id("ridePosts"),
+    messageId: v.id("rideMessages"),
+    emoji: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = await assertChatAccess(ctx, args.ridePostId);
+
+    const existing = await ctx.db
+      .query("messageReactions")
+      .withIndex("by_user_and_message", (q) => q.eq("userId", userId).eq("messageId", args.messageId))
+      .filter((q) => q.eq(q.field("emoji"), args.emoji))
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    } else {
+      await ctx.db.insert("messageReactions", {
+        messageId: args.messageId,
+        ridePostId: args.ridePostId,
+        userId,
+        emoji: args.emoji,
+        createdAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const setTypingIndicator = mutation({
+  args: {
+    ridePostId: v.id("ridePosts"),
+    userName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const { userId } = await assertChatAccess(ctx, args.ridePostId);
+
+    const existing = await ctx.db
+      .query("typingIndicators")
+      .withIndex("by_user_and_ride", (q) => q.eq("userId", userId).eq("ridePostId", args.ridePostId))
+      .first();
+
+    if (existing) {
+      await ctx.db.patch(existing._id, { updatedAt: Date.now(), userName: args.userName });
+    } else {
+      await ctx.db.insert("typingIndicators", {
+        ridePostId: args.ridePostId,
+        userId,
+        userName: args.userName,
+        updatedAt: Date.now(),
+      });
+    }
+  },
+});
+
+export const clearTypingIndicator = mutation({
+  args: { ridePostId: v.id("ridePosts") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return;
+
+    const existing = await ctx.db
+      .query("typingIndicators")
+      .withIndex("by_user_and_ride", (q) => q.eq("userId", userId).eq("ridePostId", args.ridePostId))
+      .first();
+
+    if (existing) {
+      await ctx.db.delete(existing._id);
+    }
+  },
+});
+
+export const getTypingIndicators = query({
+  args: { ridePostId: v.id("ridePosts") },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    const indicators = await ctx.db
+      .query("typingIndicators")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+
+    const now = Date.now();
+    return indicators
+      .filter((ind) => ind.userId !== userId && now - ind.updatedAt < 6000)
+      .map((ind) => ind.userName);
   },
 });

@@ -1,0 +1,278 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-16T00:00:00Z",
+  "title": "Design System: Noru",
+  "extensions": {
+    "colorMeta": {
+      "cobalt-action": {
+        "role": "primary",
+        "displayName": "Cobalt Action",
+        "canonical": "#1E6CCC",
+        "tonalRamp": ["#0B1827", "#152845", "#1B3E6E", "#1B54A0", "#1E6CCC", "#4A8BD5", "#93C5FD", "#DBEAFE"]
+      },
+      "cobalt-surface": {
+        "role": "primary",
+        "displayName": "Cobalt Surface",
+        "canonical": "#1764C6",
+        "tonalRamp": ["#0A1624", "#132540", "#183868", "#174F99", "#1764C6", "#4088D0", "#8EC5FB", "#D8EEFF"]
+      },
+      "cobalt-low": {
+        "role": "primary",
+        "displayName": "Cobalt Low",
+        "canonical": "#1F3654",
+        "tonalRamp": ["#080F18", "#0F1F34", "#152C4A", "#1A3860", "#1F3654", "#2D4E74", "#5C82AA", "#A8C4DF"]
+      },
+      "cobalt-ring": {
+        "role": "secondary",
+        "displayName": "Cobalt Ring",
+        "canonical": "#60A5FA",
+        "tonalRamp": ["#0A1827", "#1A3A6E", "#2560A8", "#3D84DA", "#60A5FA", "#85BDFB", "#BAD6FD", "#E4F0FE"]
+      },
+      "cobalt-tint": {
+        "role": "secondary",
+        "displayName": "Cobalt Tint",
+        "canonical": "#DBEAFE",
+        "tonalRamp": ["#1E3A5F", "#2B5490", "#3B75C8", "#6FA0E8", "#DBEAFE", "#E8F2FE", "#F2F8FF", "#FAFCFF"]
+      },
+      "campus-night": {
+        "role": "neutral",
+        "displayName": "Campus Night",
+        "canonical": "#2E2E2E",
+        "tonalRamp": ["#0A0A0A", "#161616", "#222222", "#2E2E2E", "#3D3D3D", "#525252", "#6B6B6B", "#8A8A8A"]
+      },
+      "elevated-slate": {
+        "role": "neutral",
+        "displayName": "Elevated Slate",
+        "canonical": "#32353B",
+        "tonalRamp": ["#0C0D10", "#181A1F", "#24262C", "#32353B", "#40444C", "#565A63", "#737880", "#9CA0A8"]
+      },
+      "recessed-slate": {
+        "role": "neutral",
+        "displayName": "Recessed Slate",
+        "canonical": "#2A2D33",
+        "tonalRamp": ["#0A0C0F", "#141619", "#1E2025", "#2A2D33", "#373B42", "#4C5059", "#696D76", "#959AA3"]
+      },
+      "midnight": {
+        "role": "neutral",
+        "displayName": "Midnight",
+        "canonical": "#0F172A",
+        "tonalRamp": ["#050810", "#080E1C", "#0C1426", "#0F172A", "#182236", "#263550", "#3D5070", "#6A829B"]
+      },
+      "near-white": {
+        "role": "neutral",
+        "displayName": "Near-White",
+        "canonical": "#F8FAFC",
+        "tonalRamp": ["#9CA3AF", "#CBD5E1", "#E2E8F0", "#F1F5F9", "#F8FAFC", "#FAFBFD", "#FCFDFE", "#FEFEFF"]
+      },
+      "cool-mist": {
+        "role": "neutral",
+        "displayName": "Cool Mist",
+        "canonical": "#C7CDD9",
+        "tonalRamp": ["#3B4050", "#555B6B", "#6E7584", "#8E95A5", "#C7CDD9", "#D5DAE4", "#E5E9EF", "#F2F4F7"]
+      },
+      "slate-mist": {
+        "role": "neutral",
+        "displayName": "Slate Mist",
+        "canonical": "#9CA3AF",
+        "tonalRamp": ["#2D3138", "#454C55", "#5C636E", "#7A8190", "#9CA3AF", "#B5BBC5", "#D1D5DB", "#EDF0F3"]
+      },
+      "grove-dark": {
+        "role": "tertiary",
+        "displayName": "Grove Dark",
+        "canonical": "#052E16",
+        "tonalRamp": ["#010E07", "#031A0D", "#042214", "#052E16", "#074021", "#0A5A2D", "#168042", "#2DAD5E"]
+      },
+      "grove-light": {
+        "role": "tertiary",
+        "displayName": "Grove Light",
+        "canonical": "#86EFAC",
+        "tonalRamp": ["#063518", "#0A5225", "#11773A", "#2EA856", "#86EFAC", "#A5F3C0", "#C6F8D7", "#E8FCF0"]
+      },
+      "ember-dark": {
+        "role": "tertiary",
+        "displayName": "Ember Dark",
+        "canonical": "#3F1D1D",
+        "tonalRamp": ["#120808", "#200F0F", "#2E1616", "#3F1D1D", "#5A2828", "#7D3434", "#B05050", "#D98A8A"]
+      },
+      "ember-light": {
+        "role": "tertiary",
+        "displayName": "Ember Light",
+        "canonical": "#FCA5A5",
+        "tonalRamp": ["#4C1010", "#7A1A1A", "#A82E2E", "#D65050", "#FCA5A5", "#FDBBBB", "#FED3D3", "#FFF0F0"]
+      }
+    },
+    "shadows": [
+      {
+        "name": "ambient",
+        "value": "0 4px 12px rgba(15, 23, 42, 0.08)",
+        "purpose": "Resting cards on the screen surface. Barely perceptible; confirms elevation."
+      },
+      {
+        "name": "lifted",
+        "value": "0 8px 16px rgba(15, 23, 42, 0.06)",
+        "purpose": "Main content scroll cards. Softer opacity; blur carries the depth."
+      },
+      {
+        "name": "fab",
+        "value": "0 10px 14px rgba(15, 23, 42, 0.18)",
+        "purpose": "Floating action button only. The one intentionally visible shadow."
+      },
+      {
+        "name": "overlay-scrim",
+        "value": "rgba(15, 23, 42, 0.45)",
+        "purpose": "Modal backdrop. No blur; opacity only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "press-state",
+        "value": "opacity 0.12s ease-out",
+        "purpose": "The only transition in the system. Opacity 1 to 0.88 on press."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main action control. Used for join ride, host, submit, confirm.",
+      "html": "<button class=\"ds-btn-primary\">Request ride</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; background: #1E6CCC; color: #F8FAFC; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 700; line-height: 1; border: none; border-radius: 12px; padding: 12px 14px; min-height: 46px; min-width: 92px; cursor: pointer; transition: opacity 0.12s ease-out; } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { opacity: 0.88; } .ds-btn-primary:focus-visible { outline: 2px solid #60A5FA; outline-offset: 2px; } .ds-btn-primary:disabled { opacity: 0.5; cursor: default; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Low-emphasis action. Used for cancel, navigate back, secondary options.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; background: #3A3F47; color: #F8FAFC; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 1; border: 1px solid #5B6371; border-radius: 12px; padding: 12px 14px; min-height: 46px; cursor: pointer; transition: opacity 0.12s ease-out; } .ds-btn-secondary:hover { opacity: 0.92; } .ds-btn-secondary:active { opacity: 0.88; } .ds-btn-secondary:focus-visible { outline: 2px solid #60A5FA; outline-offset: 2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action only. Used for report and block actions.",
+      "html": "<button class=\"ds-btn-danger\">Report user</button>",
+      "css": ".ds-btn-danger { display: inline-flex; align-items: center; justify-content: center; background: #3F1D1D; color: #FCA5A5; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 1; border: 1px solid #7F1D1D; border-radius: 12px; padding: 12px 14px; min-height: 46px; cursor: pointer; transition: opacity 0.12s ease-out; } .ds-btn-danger:hover { opacity: 0.92; } .ds-btn-danger:active { opacity: 0.88; } .ds-btn-danger:focus-visible { outline: 2px solid #FCA5A5; outline-offset: 2px; }"
+    },
+    {
+      "name": "Filter Chip (default)",
+      "kind": "chip",
+      "refersTo": "chip-default",
+      "description": "Unselected filter toggle for the ride list.",
+      "html": "<button class=\"ds-chip\">Quiet ride</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; background: #2A2D33; color: #9CA3AF; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid #5B6371; border-radius: 999px; padding: 7px 14px; cursor: pointer; transition: background 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out; } .ds-chip:hover { border-color: #93C5FD; }"
+    },
+    {
+      "name": "Filter Chip (active)",
+      "kind": "chip",
+      "refersTo": "chip-active",
+      "description": "Selected filter toggle state.",
+      "html": "<button class=\"ds-chip ds-chip-active\">Women only</button>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; background: #2A2D33; color: #9CA3AF; font-family: Inter, system-ui, sans-serif; font-size: 14px; font-weight: 500; border: 1px solid #5B6371; border-radius: 999px; padding: 7px 14px; cursor: pointer; transition: background 0.12s ease-out, border-color 0.12s ease-out, color 0.12s ease-out; } .ds-chip-active { background: #1F3654; border-color: #60A5FA; color: #DBEAFE; font-weight: 700; }"
+    },
+    {
+      "name": "Ride Card",
+      "kind": "card",
+      "refersTo": "card-ride",
+      "description": "Core list unit on the home screen. Shows route, meta, host info, and join action.",
+      "html": "<div class=\"ds-ride-card\"><div class=\"ds-ride-header\"><span class=\"ds-ride-route\">HSR Layout → ITPL</span><span class=\"ds-price-pill\">fare: ₹40</span></div><p class=\"ds-ride-meta\">8:30 AM · Auto · 2 seats left</p><div class=\"ds-ride-footer\"><div class=\"ds-rider-row\"><div class=\"ds-avatar-sm\">R</div><span class=\"ds-rider-meta\">Rahul K · 4.8</span></div><button class=\"ds-request-btn\">Request</button></div></div>",
+      "css": ".ds-ride-card { background: #2A2D33; border: 1px solid #4B5563; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 7px; } .ds-ride-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; } .ds-ride-route { color: #F3F4F6; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 700; flex: 1; } .ds-price-pill { background: #052E16; color: #86EFAC; font-family: Inter, system-ui, sans-serif; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 5px 10px; white-space: nowrap; } .ds-ride-meta { color: #C7CDD9; font-family: Inter, system-ui, sans-serif; font-size: 13px; font-weight: 500; margin: 0; } .ds-ride-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; } .ds-rider-row { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; } .ds-avatar-sm { width: 28px; height: 28px; border-radius: 50%; background: #1F3654; border: 1.5px solid #60A5FA; color: #DBEAFE; font-family: Inter, system-ui, sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .ds-rider-meta { color: #C7CDD9; font-family: Inter, system-ui, sans-serif; font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ds-request-btn { background: #1E6CCC; color: #EAF3FF; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 700; border: none; border-radius: 11px; padding: 0 12px; min-height: 42px; min-width: 92px; cursor: pointer; transition: opacity 0.12s ease-out; } .ds-request-btn:hover { opacity: 0.92; } .ds-request-btn:active { opacity: 0.88; }"
+    },
+    {
+      "name": "Hero Card",
+      "kind": "card",
+      "refersTo": "card-hero",
+      "description": "Primary action context card on the home screen. The only large cobalt surface.",
+      "html": "<div class=\"ds-hero-card\"><p class=\"ds-hero-title\">Time to head to campus?</p><div class=\"ds-hero-actions\"><button class=\"ds-hero-action-primary\">Host a ride</button></div></div>",
+      "css": ".ds-hero-card { background: #1764C6; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 6px; } .ds-hero-title { color: #EFF6FF; font-family: Inter, system-ui, sans-serif; font-size: 23px; font-weight: 700; margin: 0; line-height: 1.25; } .ds-hero-actions { display: flex; gap: 10px; margin-top: 6px; } .ds-hero-action-primary { flex: 1; min-height: 42px; background: #E8EFF7; color: #1F67BC; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 700; border: 1px solid #E8EFF7; border-radius: 10px; cursor: pointer; transition: opacity 0.12s ease-out; } .ds-hero-action-primary:hover { opacity: 0.92; } .ds-hero-action-primary:active { opacity: 0.88; }"
+    },
+    {
+      "name": "Avatar (verified)",
+      "kind": "custom",
+      "description": "Verified face avatar with cobalt ring. Appears at all sizes across the app.",
+      "html": "<div class=\"ds-avatar ds-avatar-lg\">A</div>",
+      "css": ".ds-avatar { border-radius: 50%; background: #1F3654; border: 2px solid #60A5FA; color: #DBEAFE; font-family: Inter, system-ui, sans-serif; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .ds-avatar-sm { width: 28px; height: 28px; font-size: 11px; border-width: 1.5px; } .ds-avatar-md { width: 44px; height: 44px; font-size: 16px; } .ds-avatar-lg { width: 72px; height: 72px; font-size: 24px; }"
+    },
+    {
+      "name": "Standard Card",
+      "kind": "card",
+      "refersTo": "card-standard",
+      "description": "General content container for onboarding steps, profile sections, empty states.",
+      "html": "<div class=\"ds-card\"><p class=\"ds-card-label\">Profile</p><p class=\"ds-card-body\">Your university account and face verification let others know who they're riding with.</p></div>",
+      "css": ".ds-card { background: #32353B; border: 1px solid #4B5563; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); } .ds-card-label { color: #F8FAFC; font-family: Inter, system-ui, sans-serif; font-size: 17px; font-weight: 700; margin: 0; } .ds-card-body { color: #C7CDD9; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500; line-height: 1.5; margin: 0; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text field for route entry, host form, and feedback.",
+      "html": "<div class=\"ds-input-wrap\"><input class=\"ds-input\" type=\"text\" placeholder=\"Start point\" /></div>",
+      "css": ".ds-input-wrap { display: flex; flex-direction: column; } .ds-input { background: #2A2D33; color: #E5E7EB; font-family: Inter, system-ui, sans-serif; font-size: 15px; font-weight: 500; border: 1px solid #5B6371; border-radius: 12px; padding: 12px; outline: none; transition: border-color 0.12s ease-out; } .ds-input::placeholder { color: #9CA3AF; } .ds-input:focus { border-color: #60A5FA; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Campus Shortcut",
+    "overview": "Noru is peer infrastructure, not a dispatch platform. The design system reflects a familiar path worn smooth by daily use: confident without ceremony, readable at a glance, dark because students check this before dawn and between lectures, not under office fluorescents. Every surface exists to get a verified student into a ride faster than any other option.\n\nThe system rejects the commercial register entirely. No map-hero layouts. No gig-economy dispatch copy. No SaaS-cream dashboards. Trust is expressed through institutional signals: the university account badge, the face-verified avatar ring, the registration number in the profile overlay. These are facts, not features.\n\nDesign serves speed. A student standing at a stop at 7:45 AM does not browse. The primary action is always one tap from the home screen. Information density is earned.",
+    "keyCharacteristics": [
+      "Dark-first: deep charcoal surfaces with a single cobalt blue carrying all action meaning",
+      "Tonal depth: lighter = closer; darker = deeper; no decorative shadow stacks",
+      "Inter Bold / Inter Medium at high weight contrast; size contrast is secondary",
+      "Tactile press states: opacity 0.88, no bounce, no scale, no color shift",
+      "Verified face as UI element: the cobalt avatar ring appears at every scale where trust matters"
+    ],
+    "rules": [
+      {
+        "name": "The Single Voice Rule",
+        "body": "Cobalt blue is the only action color. If something is pressable and consequential, it is cobalt. If it is cobalt, it is pressable and consequential. No secondary accent, no notification color, no section theming.",
+        "section": "colors"
+      },
+      {
+        "name": "The Status-Only Rule",
+        "body": "Grove (green) exists for open status and fare. Ember (red) exists for full status and danger. Both are forbidden in any other context.",
+        "section": "colors"
+      },
+      {
+        "name": "The Two-Weight Rule",
+        "body": "InterMedium (500) and InterBold (700) are the only weights in use. SemiBold is loaded but inactive. New work must not introduce it without deliberate justification.",
+        "section": "typography"
+      },
+      {
+        "name": "The No-Italic Rule",
+        "body": "Italic is used only in the moderation screen to distinguish user-reported quoted text from system copy. Forbidden everywhere else.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tonal-First Rule",
+        "body": "If tonal contrast already expresses the depth relationship between two surfaces, do not add a shadow. Shadows confirm elevation; they do not create it.",
+        "section": "elevation"
+      },
+      {
+        "name": "The FAB Exception",
+        "body": "The FAB is the only component with an intentionally heavy shadow. It must separate from scroll content. All other surfaces use ambient or none.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Cobalt Action (#1E6CCC) for every tap target that advances the student: join, host, submit, confirm.",
+      "Do use the tonal depth stack for elevation. Lighter = closer; never reverse this.",
+      "Do render the avatar ring (#60A5FA) at every size where a verified face appears.",
+      "Do use pill chips (999px radius) for filter and toggle controls.",
+      "Do express pressed state as opacity 0.88 only. No scale, no glow, no color shift.",
+      "Do uppercase section markers at 14px / 0.6 tracking for filter zone headers only.",
+      "Do restrict green to open status and fare, red to full status and danger actions."
+    ],
+    "donts": [
+      "Don't style Noru like Uber or Lyft. No map-hero layouts, dispatch copy, or gig-economy commercial register.",
+      "Don't use SaaS-cream whites, teal accents, or hollow grid dashboards.",
+      "Don't introduce a second action color. Cobalt or nothing, in both dark and light themes.",
+      "Don't use border-left or border-right greater than 1px as a colored accent stripe.",
+      "Don't use gradient text (background-clip: text with a gradient).",
+      "Don't use glassmorphism. No backdrop-filter: blur() on decorative card surfaces.",
+      "Don't default to a modal. Justify each modal independently.",
+      "Don't use the hero-metric template (large number, small label, gradient accent).",
+      "Don't add shadows to ride cards or standard cards beyond ambient."
+    ]
+  }
+}

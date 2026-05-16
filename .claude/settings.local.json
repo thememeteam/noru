@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem *)",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(bunx tsc *)",
+      "Bash(bunx expo *)"
+    ]
+  }
+}

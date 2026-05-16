@@ -111,6 +111,26 @@ export default defineSchema({
     userId: v.id("users"),
     senderName: v.string(),
     text: v.string(),
+    replyToId: v.optional(v.id("rideMessages")),
+    replyToText: v.optional(v.string()),
+    replyToSenderName: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_ride_post_id_and_created_at", ["ridePostId", "createdAt"]),
+  messageReactions: defineTable({
+    messageId: v.id("rideMessages"),
+    ridePostId: v.id("ridePosts"),
+    userId: v.id("users"),
+    emoji: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_message_id", ["messageId"])
+    .index("by_user_and_message", ["userId", "messageId"]),
+  typingIndicators: defineTable({
+    ridePostId: v.id("ridePosts"),
+    userId: v.id("users"),
+    userName: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_ride_post_id", ["ridePostId"])
+    .index("by_user_and_ride", ["userId", "ridePostId"]),
 });

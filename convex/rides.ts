@@ -245,6 +245,18 @@ export const createRidePost = mutation({
       throw new Error("Ride start time is required.");
     }
 
+    const existingActivePosts = await ctx.db
+      .query("ridePosts")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(10);
+
+    for (const post of existingActivePosts) {
+      if (!post.isStopped) {
+        throw new Error("You already have an active ride. Stop it first.");
+      }
+    }
+
     if (args.womenOnly) {
       const profile = await ctx.db
         .query("studentProfiles")
@@ -450,11 +462,23 @@ export const joinRidePost = mutation({
       throw new Error("You already joined this ride.");
     }
 
+    const activeHostedPosts = await ctx.db
+      .query("ridePosts")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .order("desc")
+      .take(10);
+
+    for (const post of activeHostedPosts) {
+      if (!post.isStopped) {
+        throw new Error("You cannot join a ride while hosting one. Stop your ride first.");
+      }
+    }
+
     const userJoins = await ctx.db
       .query("rideJoins")
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
       .order("desc")
-      .take(20);
+      .collect();
 
     for (const join of userJoins) {
       const joinedRidePost = await ctx.db.get(join.ridePostId);

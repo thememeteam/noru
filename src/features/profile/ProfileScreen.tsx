@@ -139,7 +139,16 @@ export function ProfileScreen() {
             )}
             <View style={profileStyles.identityTextCol}>
               <Text style={styles.profileName}>{displayName}</Text>
-              <Text style={styles.profileEmail}>{onboardingState.universityEmail ?? "No email found"}</Text>
+              <View style={profileStyles.emailRow}>
+                <Text style={[styles.profileEmail, profileStyles.emailText]} numberOfLines={1}>
+                  {onboardingState.universityEmail ?? "No email found"}
+                </Text>
+                {onboardingState.universityEmail ? (
+                  <View style={profileStyles.verifiedBadge}>
+                    <Text style={profileStyles.verifiedBadgeText}>Verified</Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
           </View>
 
@@ -215,15 +224,7 @@ export function ProfileScreen() {
               variant="secondary"
             />
           ) : null}
-          <Pressable
-            onPress={() => void onSignOut()}
-            style={({ pressed }) => [
-              styles.buttonBase,
-              { backgroundColor: "#A83856", borderWidth: 1, borderColor: "#C85A77" },
-              pressed && styles.buttonPressed,
-            ]}>
-            <Text style={[styles.buttonText, { color: "#FFE8EE" }]}>Sign out</Text>
-          </Pressable>
+          <AppButton title="Sign out" onPress={() => void onSignOut()} variant="danger" />
 
         </ScrollView>
       </SafeAreaView>
@@ -257,7 +258,30 @@ const profileStyles = StyleSheet.create({
   },
   identityTextCol: {
     flex: 1,
-    gap: 3,
+    gap: 4,
+  },
+  emailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    flexWrap: "wrap",
+  },
+  emailText: {
+    flexShrink: 1,
+  },
+  verifiedBadge: {
+    borderRadius: 999,
+    backgroundColor: "#1F3654",
+    borderWidth: 1,
+    borderColor: "#1E6CCC",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  verifiedBadgeText: {
+    color: "#DBEAFE",
+    fontSize: 11,
+    fontFamily: "InterBold",
+    letterSpacing: 0.3,
   },
   sectionHeading: {
     color: "#AEB5C0",
@@ -297,7 +321,7 @@ const profileStyles = StyleSheet.create({
   },
   reviewCard: {
     borderWidth: 1,
-    borderColor: "#4B5563",
+    borderColor: "#1F3654",
     backgroundColor: "#2A2D33",
     borderRadius: 12,
     padding: 12,

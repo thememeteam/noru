@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import React, { useRef, useState } from "react";
-import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -25,14 +25,13 @@ function formatRideTime(rideStartAt?: number | null) {
 export function RidePickScreen() {
   const styles = useAppStyles();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
-  const posts = useQuery(api.rides.listJoinableRidePosts) ?? [];
+  const postsRaw = useQuery(api.rides.listJoinableRidePosts);
+  const posts = postsRaw ?? [];
+  const postsLoading = postsRaw === undefined;
   const activeJoinedRide = useQuery(api.rides.getMyActiveJoinedRide);
   const activeHostedRide = useQuery(api.rides.getMyActiveHostedRide);
   const joinRidePost = useMutation(api.rides.joinRidePost);
-  const scrollRef = useRef<ScrollView>(null);
-
   const [joiningRideId, setJoiningRideId] = useState<string | null>(null);
-  const [discoverTargetY, setDiscoverTargetY] = useState(0);
   const [vehicleFilter, setVehicleFilter] = useState<string | null>(null);
   const [womenOnlyFilter, setWomenOnlyFilter] = useState(false);
   const [quietRideFilter, setQuietRideFilter] = useState(false);
@@ -83,10 +82,6 @@ export function RidePickScreen() {
     }
   };
 
-  const onDiscoverPress = () => {
-    scrollRef.current?.scrollTo({ y: Math.max(0, discoverTargetY - 8), animated: true });
-  };
-
   const onHostPress = () => {
     if (activeHostedRide) {
       Alert.alert(
@@ -109,7 +104,7 @@ export function RidePickScreen() {
 
   return (
     <View style={[styles.pickScreenContainer, ridePickStyles.screen]}>
-      <ScrollView ref={scrollRef} contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
+      <ScrollView contentContainerStyle={[styles.boardContent, ridePickStyles.boardContent]}>
         <View style={ridePickStyles.greetingWrap}>
           <View style={ridePickStyles.greetingTextCol}>
             <Text style={ridePickStyles.greetingSmall}>{dayGreeting}</Text>
@@ -141,7 +136,7 @@ export function RidePickScreen() {
           </View>
         </View>
 
-        <View style={ridePickStyles.filterSection} onLayout={(event) => setDiscoverTargetY(event.nativeEvent.layout.y)}>
+        <View style={ridePickStyles.filterSection}>
           <Text style={ridePickStyles.sectionTitle}>AVAILABLE RIDES</Text>
 
           <View style={ridePickStyles.filterRow}>
@@ -213,11 +208,27 @@ export function RidePickScreen() {
             return true;
           });
 
+          if (postsLoading) {
+            return (
+              <View style={ridePickStyles.listEmptyState}>
+                <ActivityIndicator size="small" color="#60A5FA" />
+              </View>
+            );
+          }
           if (posts.length === 0) {
-            return <Text style={[styles.description, ridePickStyles.description]}>No joinable rides right now.</Text>;
+            return (
+              <View style={ridePickStyles.listEmptyState}>
+                <Text style={ridePickStyles.emptyStateHeading}>No rides posted yet.</Text>
+                <Text style={ridePickStyles.emptyStateBody}>Host one and others on your route can join you.</Text>
+              </View>
+            );
           }
           if (filteredPosts.length === 0) {
-            return <Text style={[styles.description, ridePickStyles.description]}>No rides match the selected filters.</Text>;
+            return (
+              <View style={ridePickStyles.listEmptyState}>
+                <Text style={ridePickStyles.emptyStateHeading}>No rides match those filters.</Text>
+              </View>
+            );
           }
 
           return (
@@ -226,10 +237,15 @@ export function RidePickScreen() {
                 const seatsLeft = Math.max(0, post.capacity - post.joinedCount);
                 const totalPrice = (post as any).totalPrice as number | undefined;
                 const rideStartAt = (post as any).rideStartAt as number | undefined;
-                const timeLabel = formatRideTime(rideStartAt) ?? "8:30 AM";
+                const timeLabel = formatRideTime(rideStartAt);
                 const priceLabel = totalPrice && Number.isFinite(totalPrice)
                   ? `fare: ₹${totalPrice}`
                   : "fare: TBD";
+                const metaParts = [
+                  timeLabel,
+                  VEHICLE_LABELS[post.vehicleType],
+                  `${seatsLeft} seat${seatsLeft !== 1 ? "s" : ""} left`,
+                ].filter(Boolean);
                 return (
                   <View
                     key={post._id}
@@ -242,7 +258,7 @@ export function RidePickScreen() {
                     </View>
 
                     <Text style={ridePickStyles.rideMeta}>
-                      {timeLabel} · {VEHICLE_LABELS[post.vehicleType]} · {seatsLeft} seats left
+                      {metaParts.join(" · ")}
                     </Text>
 
                     <View style={ridePickStyles.rideFooterRow}>
@@ -265,17 +281,17 @@ export function RidePickScreen() {
                             </View>
                           )}
                         </Pressable>
-                        <Text style={ridePickStyles.riderMeta} numberOfLines={1}>{post.riderName} · 4.8</Text>
+                        <Text style={ridePickStyles.riderMeta} numberOfLines={1}>{post.riderName}</Text>
                       </View>
 
                       <Pressable
                         style={({ pressed }) => [
                           ridePickStyles.requestButton,
-                          (joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonDisabled,
-                          pressed && !(joiningRideId === post._id || !!activeJoinedRide) && ridePickStyles.buttonPressed,
+                          (joiningRideId === post._id || !!activeJoinedRide || !!activeHostedRide) && ridePickStyles.buttonDisabled,
+                          pressed && !(joiningRideId === post._id || !!activeJoinedRide || !!activeHostedRide) && ridePickStyles.buttonPressed,
                         ]}
                         onPress={() => void onJoinRide(post._id)}
-                        disabled={joiningRideId === post._id || !!activeJoinedRide}>
+                        disabled={joiningRideId === post._id || !!activeJoinedRide || !!activeHostedRide}>
                         <Text style={ridePickStyles.requestButtonText}>
                           {joiningRideId === post._id ? "Joining..." : "Request"}
                         </Text>
@@ -378,7 +394,7 @@ const ridePickStyles = StyleSheet.create({
     maxWidth: 760,
     alignSelf: "center",
     borderRadius: 14,
-    backgroundColor: "#1F67BC",
+    backgroundColor: "#1764C6",
     paddingHorizontal: 14,
     paddingVertical: 12,
     gap: 6,
@@ -518,7 +534,7 @@ const ridePickStyles = StyleSheet.create({
   },
   requestButton: {
     minHeight: 42,
-    borderRadius: 11,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 12,
@@ -535,5 +551,22 @@ const ridePickStyles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+  listEmptyState: {
+    width: "100%",
+    maxWidth: 760,
+    alignSelf: "center",
+    paddingVertical: 28,
+    gap: 6,
+  },
+  emptyStateHeading: {
+    color: "#D1D5DB",
+    fontSize: 16,
+    fontFamily: "InterMedium",
+  },
+  emptyStateBody: {
+    color: "#9CA3AF",
+    fontSize: 14,
+    fontFamily: "InterMedium",
   },
 });

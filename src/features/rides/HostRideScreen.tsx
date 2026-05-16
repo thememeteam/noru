@@ -2,13 +2,75 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { AccessibilityInfo, ActivityIndicator, Alert, Animated, Easing, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_CAPACITIES, VEHICLE_LABELS, VEHICLE_OPTIONS, type VehicleType } from "./constants";
+
+const TIME_PRESETS = [
+  { label: "Now", mins: 0 },
+  { label: "+15m", mins: 15 },
+  { label: "+30m", mins: 30 },
+  { label: "+1h", mins: 60 },
+] as const;
+
+const EASE_OUT_QUART = Easing.out(Easing.poly(4));
+
+function validate(name: string, value: string): string {
+  if (name === "startPoint" || name === "endPoint") {
+    return value.trim().length < 3 ? "Enter at least 3 characters" : "";
+  }
+  if (name === "price") {
+    const n = Number(value);
+    if (!value.trim() || !Number.isFinite(n) || n <= 0) return "Enter a valid amount";
+    if (n < 20) return "Minimum fare is ₹20";
+    return "";
+  }
+  return "";
+}
+
+// Slides + fades in from below when mounted
+function AnimatedError({ message }: { message: string }) {
+  const slide = useRef(new Animated.Value(8)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slide, { toValue: 0, duration: 150, easing: EASE_OUT_QUART, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  return (
+    <Animated.Text style={[hostStyles.fieldError, { opacity: fade, transform: [{ translateY: slide }] }]}>
+      {message}
+    </Animated.Text>
+  );
+}
+
+// Scale-springs on press, then returns to 1.0
+function TimePresetChip({ label, onPress }: { label: string; onPress: () => void }) {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePress = () => {
+    Animated.sequence([
+      Animated.spring(scale, { toValue: 1.07, tension: 400, friction: 8, useNativeDriver: true }),
+      Animated.spring(scale, { toValue: 1.0, tension: 260, friction: 14, useNativeDriver: true }),
+    ]).start();
+    onPress();
+  };
+
+  return (
+    <Pressable onPress={handlePress} hitSlop={4}>
+      <Animated.View style={[hostStyles.timePreset, { transform: [{ scale }] }]}>
+        <Text style={hostStyles.timePresetText}>{label}</Text>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export function HostRideScreen() {
   const styles = useAppStyles();
@@ -26,23 +88,78 @@ export function HostRideScreen() {
   const [quietRide, setQuietRide] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldTouched, setFieldTouched] = useState<Record<string, boolean>>({});
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const scrollRef = useRef<ScrollView>(null);
   const fieldY = useRef<Record<string, number>>({});
   const focusedField = useRef<string | null>(null);
+  const isSubmittingRef = useRef(false);
+  const prevCanCreate = useRef(false);
+
+  // Spring animation for confirmation sheet (slides up from below)
+  const confirmSlide = useRef(new Animated.Value(600)).current;
+  // Pulse animation for the submit button when form becomes valid
+  const buttonPulse = useRef(new Animated.Value(1)).current;
+  // Controls whether motion is suppressed
+  const motionEnabled = useRef(true);
+
+  useEffect(() => {
+    AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
+      motionEnabled.current = !reduced;
+    });
+  }, []);
 
   const maxCapacity = VEHICLE_CAPACITIES[vehicleType];
   const parsedPrice = Number(totalPrice);
-  const canCreate =
-    startPoint.trim().length > 0
-    && endPoint.trim().length > 0
-    && Number.isFinite(parsedPrice)
-    && parsedPrice > 0
-    && rideStartAt !== null
-    && !isCreating;
+  const pricePerRider = capacity > 1 && Number.isFinite(parsedPrice) && parsedPrice > 0
+    ? Math.round(parsedPrice / capacity)
+    : null;
 
   const isWomenOnlyEligible =
     (onboarding as any)?.gender === "female" || (onboarding as any)?.gender === "nonBinary";
+  const womenOnlyEligibleVehicle = vehicleType !== "ownBike";
+  const canToggleWomenOnly = isWomenOnlyEligible && womenOnlyEligibleVehicle;
+
+  const canCreate =
+    startPoint.trim().length >= 3
+    && endPoint.trim().length >= 3
+    && Number.isFinite(parsedPrice)
+    && parsedPrice >= 20
+    && rideStartAt !== null
+    && !isCreating
+    && Object.values(fieldErrors).every(e => !e);
+
+  // Button pulse: fires once when canCreate transitions false → true
+  useEffect(() => {
+    if (!prevCanCreate.current && canCreate && motionEnabled.current) {
+      Animated.sequence([
+        Animated.timing(buttonPulse, { toValue: 0.94, duration: 80, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.spring(buttonPulse, { toValue: 1, tension: 240, friction: 10, useNativeDriver: true }),
+      ]).start();
+    }
+    prevCanCreate.current = canCreate;
+  }, [canCreate]);
+
+  // Confirmation sheet spring
+  useEffect(() => {
+    if (showConfirm) {
+      if (motionEnabled.current) {
+        confirmSlide.setValue(600);
+        Animated.spring(confirmSlide, {
+          toValue: 0,
+          tension: 80,
+          friction: 14,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        confirmSlide.setValue(0);
+      }
+    } else {
+      confirmSlide.setValue(600);
+    }
+  }, [showConfirm]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -76,12 +193,24 @@ export function HostRideScreen() {
     }
   };
 
+  const handleBlur = (name: string, value: string) => {
+    setFieldTouched(p => ({ ...p, [name]: true }));
+    setFieldErrors(p => ({ ...p, [name]: validate(name, value) }));
+  };
+
   const handleVehicleTypeChange = (type: VehicleType) => {
     setVehicleType(type);
     setCapacity(VEHICLE_CAPACITIES[type]);
-    if (type !== "auto" && type !== "cab" && type !== "ownCar") {
+    if (type === "ownBike") {
       setWomenOnly(false);
     }
+  };
+
+  const applyTimePreset = (minutesFromNow: number) => {
+    const d = new Date();
+    d.setSeconds(0, 0);
+    d.setMinutes(d.getMinutes() + minutesFromNow);
+    setRideStartAt(d);
   };
 
   const onTimeChange = (_event: any, selectedDate?: Date) => {
@@ -98,9 +227,8 @@ export function HostRideScreen() {
     : null;
 
   const onCreate = async () => {
-    if (!canCreate || !rideStartAt) {
-      return;
-    }
+    if (isSubmittingRef.current || !canCreate || !rideStartAt) return;
+    isSubmittingRef.current = true;
     try {
       setIsCreating(true);
       const createdId = await createRidePost({
@@ -121,14 +249,19 @@ export function HostRideScreen() {
       setRideStartAt(null);
       setWomenOnly(false);
       setQuietRide(false);
+      setFieldErrors({});
+      setFieldTouched({});
+      setShowConfirm(false);
       router.replace({ pathname: "/waiting", params: { ridePostId: createdId } });
     } catch (error) {
+      setShowConfirm(false);
       Alert.alert(
-        "Could not create ride post",
+        "Could not post ride",
         error instanceof Error ? error.message : "Please try again.",
       );
     } finally {
       setIsCreating(false);
+      isSubmittingRef.current = false;
     }
   };
 
@@ -145,9 +278,14 @@ export function HostRideScreen() {
     );
   }
 
+  const activeFilters = [
+    womenOnly && "Women only",
+    quietRide && "Quiet ride",
+  ].filter(Boolean).join(", ");
+
   return (
     <View style={styles.screenContainer}>
-      <SafeAreaView edges={["bottom"]} style={[styles.safeArea, {paddingHorizontal: 0}]}>
+      <SafeAreaView edges={["bottom"]} style={[styles.safeArea, { paddingHorizontal: 0 }]}>
         <ScrollView
           ref={scrollRef}
           contentContainerStyle={[styles.boardContent, { paddingBottom: Math.max(28, keyboardHeight), paddingHorizontal: 16 }]}
@@ -158,14 +296,18 @@ export function HostRideScreen() {
             onLayout={(e) => { fieldY.current.startPoint = e.nativeEvent.layout.y; }}>
             <Text style={hostStyles.fieldLabel}>From (pickup)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fieldTouched.startPoint && fieldErrors.startPoint ? hostStyles.inputError : null]}
               value={startPoint}
               onChangeText={setStartPoint}
               onFocus={() => handleFieldFocus("startPoint")}
+              onBlur={() => handleBlur("startPoint", startPoint)}
               onTouchEnd={() => scrollToField("startPoint")}
               placeholder="Start point"
               placeholderTextColor="#7B879C"
             />
+            {fieldTouched.startPoint && fieldErrors.startPoint
+              ? <AnimatedError key={fieldErrors.startPoint} message={fieldErrors.startPoint} />
+              : null}
           </View>
 
           <View
@@ -173,14 +315,18 @@ export function HostRideScreen() {
             onLayout={(e) => { fieldY.current.endPoint = e.nativeEvent.layout.y; }}>
             <Text style={hostStyles.fieldLabel}>To (destination)</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, fieldTouched.endPoint && fieldErrors.endPoint ? hostStyles.inputError : null]}
               value={endPoint}
               onChangeText={setEndPoint}
               onFocus={() => handleFieldFocus("endPoint")}
+              onBlur={() => handleBlur("endPoint", endPoint)}
               onTouchEnd={() => scrollToField("endPoint")}
               placeholder="Destination"
               placeholderTextColor="#7B879C"
             />
+            {fieldTouched.endPoint && fieldErrors.endPoint
+              ? <AnimatedError key={fieldErrors.endPoint} message={fieldErrors.endPoint} />
+              : null}
           </View>
 
           <AppButton title="Swap source / destination" onPress={swapPoints} variant="secondary" />
@@ -199,6 +345,9 @@ export function HostRideScreen() {
                 </Pressable>
               ))}
             </View>
+            {(vehicleType === "ownCar" || vehicleType === "ownBike") && (
+              <Text style={hostStyles.vehicleNote}>Riders share your personal vehicle</Text>
+            )}
           </View>
 
           {maxCapacity > 1 && (
@@ -221,11 +370,20 @@ export function HostRideScreen() {
 
           <View style={hostStyles.fieldGroup}>
             <Text style={hostStyles.fieldLabel}>Start time</Text>
+            <View style={hostStyles.timePresetsRow}>
+              {TIME_PRESETS.map((p) => (
+                <TimePresetChip
+                  key={p.label}
+                  label={p.label}
+                  onPress={() => applyTimePreset(p.mins)}
+                />
+              ))}
+            </View>
             <Pressable
               style={[styles.input, hostStyles.timeButton]}
               onPress={() => setShowTimePicker(true)}>
               <Text style={timeLabel ? hostStyles.timeText : hostStyles.timePlaceholder}>
-                {timeLabel ?? "Select time"}
+                {timeLabel ?? "Or pick a custom time"}
               </Text>
             </Pressable>
           </View>
@@ -242,31 +400,46 @@ export function HostRideScreen() {
           <View
             style={hostStyles.fieldGroup}
             onLayout={(e) => { fieldY.current.price = e.nativeEvent.layout.y; }}>
-            <Text style={hostStyles.fieldLabel}>Total fare (₹, split between riders)</Text>
-            <TextInput
-              style={styles.input}
-              value={totalPrice}
-              onChangeText={setTotalPrice}
-              onFocus={() => handleFieldFocus("price")}
-              onTouchEnd={() => scrollToField("price")}
-              placeholder="180"
-              placeholderTextColor="#7B879C"
-              keyboardType="numeric"
-            />
+            <Text style={hostStyles.fieldLabel}>Total fare (split between riders)</Text>
+            <View style={[styles.input, hostStyles.fareRow, fieldTouched.price && fieldErrors.price ? hostStyles.inputError : null]}>
+              <Text style={hostStyles.farePrefix}>₹</Text>
+              <TextInput
+                style={hostStyles.fareInput}
+                value={totalPrice}
+                onChangeText={setTotalPrice}
+                onFocus={() => handleFieldFocus("price")}
+                onBlur={() => handleBlur("price", totalPrice)}
+                onTouchEnd={() => scrollToField("price")}
+                placeholder="e.g. 180"
+                placeholderTextColor="#7B879C"
+                keyboardType="numeric"
+              />
+            </View>
+            {fieldTouched.price && fieldErrors.price
+              ? <AnimatedError key={fieldErrors.price} message={fieldErrors.price} />
+              : pricePerRider !== null
+              ? <Text style={hostStyles.fieldHint}>₹{pricePerRider} per rider</Text>
+              : null}
           </View>
 
           <View style={hostStyles.fieldGroup}>
             <Text style={hostStyles.fieldLabel}>Ride options</Text>
             <View style={styles.vehicleRow}>
-              {isWomenOnlyEligible && (
-                <Pressable
-                  style={[styles.vehicleChip, womenOnly && styles.vehicleChipSelected]}
-                  onPress={() => setWomenOnly(!womenOnly)}>
-                  <Text style={[styles.vehicleChipText, womenOnly && styles.vehicleChipTextSelected]}>
-                    Women only
-                  </Text>
-                </Pressable>
-              )}
+              <Pressable
+                style={[
+                  styles.vehicleChip,
+                  womenOnly && styles.vehicleChipSelected,
+                  !canToggleWomenOnly && hostStyles.chipDisabled,
+                ]}
+                onPress={() => canToggleWomenOnly && setWomenOnly(!womenOnly)}>
+                <Text style={[
+                  styles.vehicleChipText,
+                  womenOnly && styles.vehicleChipTextSelected,
+                  !canToggleWomenOnly && hostStyles.chipTextDisabled,
+                ]}>
+                  Women only
+                </Text>
+              </Pressable>
               <Pressable
                 style={[styles.vehicleChip, quietRide && styles.vehicleChipSelected]}
                 onPress={() => setQuietRide(!quietRide)}>
@@ -275,16 +448,27 @@ export function HostRideScreen() {
                 </Text>
               </Pressable>
             </View>
+            {!isWomenOnlyEligible && (
+              <Text style={hostStyles.optionHint}>Women only: available to female and non-binary riders</Text>
+            )}
+            {isWomenOnlyEligible && !womenOnlyEligibleVehicle && (
+              <Text style={hostStyles.optionHint}>Women only: not available for bikes</Text>
+            )}
+            <Text style={hostStyles.optionHint}>Quiet ride: passengers keep conversation minimal</Text>
           </View>
 
-          <AppButton
-            title={isCreating ? "Posting..." : "Post ride"}
-            onPress={() => void onCreate()}
-            disabled={!canCreate}
-          />
+          {/* Button pulses once when the form transitions from invalid → valid */}
+          <Animated.View style={{ transform: [{ scale: buttonPulse }] }}>
+            <AppButton
+              title="Review & post"
+              onPress={() => setShowConfirm(true)}
+              disabled={!canCreate}
+            />
+          </Animated.View>
         </ScrollView>
       </SafeAreaView>
 
+      {/* iOS time picker */}
       {Platform.OS === "ios" && (
         <Modal
           visible={showTimePicker}
@@ -309,6 +493,70 @@ export function HostRideScreen() {
           </Pressable>
         </Modal>
       )}
+
+      {/* Confirmation sheet — spring entrance */}
+      <Modal
+        visible={showConfirm}
+        transparent
+        animationType="none"
+        onRequestClose={() => !isCreating && setShowConfirm(false)}>
+        <Pressable
+          style={hostStyles.pickerBackdrop}
+          onPress={() => !isCreating && setShowConfirm(false)}>
+          <Animated.View
+            style={[hostStyles.confirmSheet, { transform: [{ translateY: confirmSlide }] }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={hostStyles.confirmHandle} />
+            <Text style={hostStyles.confirmTitle}>Post this ride?</Text>
+
+            <View style={hostStyles.confirmRow}>
+              <Text style={hostStyles.confirmLabel}>Route</Text>
+              <Text style={hostStyles.confirmValue} numberOfLines={2}>
+                {startPoint} → {endPoint}
+              </Text>
+            </View>
+
+            <View style={hostStyles.confirmRow}>
+              <Text style={hostStyles.confirmLabel}>Vehicle</Text>
+              <Text style={hostStyles.confirmValue}>
+                {VEHICLE_LABELS[vehicleType]}{maxCapacity > 1 ? `, ${capacity} seat${capacity !== 1 ? "s" : ""}` : ""}
+              </Text>
+            </View>
+
+            <View style={hostStyles.confirmRow}>
+              <Text style={hostStyles.confirmLabel}>Departs</Text>
+              <Text style={hostStyles.confirmValue}>{timeLabel}</Text>
+            </View>
+
+            <View style={hostStyles.confirmRow}>
+              <Text style={hostStyles.confirmLabel}>Fare</Text>
+              <Text style={hostStyles.confirmValue}>
+                ₹{parsedPrice} total{pricePerRider !== null ? ` · ₹${pricePerRider} per rider` : ""}
+              </Text>
+            </View>
+
+            {activeFilters ? (
+              <View style={hostStyles.confirmRow}>
+                <Text style={hostStyles.confirmLabel}>Filters</Text>
+                <Text style={hostStyles.confirmValue}>{activeFilters}</Text>
+              </View>
+            ) : null}
+
+            <View style={hostStyles.confirmActions}>
+              <AppButton
+                title={isCreating ? "Posting..." : "Confirm"}
+                onPress={() => void onCreate()}
+                disabled={isCreating}
+              />
+              <AppButton
+                title="Edit"
+                onPress={() => setShowConfirm(false)}
+                variant="secondary"
+              />
+            </View>
+          </Animated.View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -321,6 +569,36 @@ const hostStyles = StyleSheet.create({
     fontSize: 13,
     color: "#B8C0CC",
     letterSpacing: 0.4,
+    fontFamily: "InterMedium",
+  },
+  fieldError: {
+    fontSize: 12,
+    color: "#FCA5A5",
+    fontFamily: "InterMedium",
+  },
+  fieldHint: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "InterMedium",
+  },
+  inputError: {
+    borderColor: "#7F1D1D",
+  },
+  timePresetsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  timePreset: {
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "#2A2D33",
+    borderWidth: 1,
+    borderColor: "#5B6371",
+  },
+  timePresetText: {
+    fontSize: 13,
+    color: "#9CA3AF",
     fontFamily: "InterMedium",
   },
   timeButton: {
@@ -336,10 +614,45 @@ const hostStyles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "InterMedium",
   },
+  fareRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 0,
+    paddingHorizontal: 12,
+  },
+  farePrefix: {
+    color: "#9CA3AF",
+    fontSize: 15,
+    fontFamily: "InterMedium",
+    marginRight: 4,
+  },
+  fareInput: {
+    flex: 1,
+    color: "#E5E7EB",
+    fontSize: 15,
+    fontFamily: "InterMedium",
+    paddingVertical: 12,
+  },
+  vehicleNote: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "InterMedium",
+  },
+  chipDisabled: {
+    opacity: 0.4,
+  },
+  chipTextDisabled: {
+    color: "#9CA3AF",
+  },
+  optionHint: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "InterMedium",
+  },
   pickerBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(15,23,42,0.45)",
   },
   pickerSheet: {
     backgroundColor: "#2A2D33",
@@ -362,5 +675,50 @@ const hostStyles = StyleSheet.create({
   },
   picker: {
     backgroundColor: "#2A2D33",
+  },
+  confirmSheet: {
+    backgroundColor: "#32353B",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingTop: 12,
+    paddingBottom: 36,
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  confirmHandle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#4B5563",
+    alignSelf: "center",
+    marginBottom: 4,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    color: "#F8FAFC",
+    fontFamily: "InterBold",
+  },
+  confirmRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 16,
+  },
+  confirmLabel: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    fontFamily: "InterMedium",
+    minWidth: 60,
+  },
+  confirmValue: {
+    fontSize: 14,
+    color: "#E5E7EB",
+    fontFamily: "InterMedium",
+    flex: 1,
+    textAlign: "right",
+  },
+  confirmActions: {
+    gap: 10,
+    marginTop: 4,
   },
 });
