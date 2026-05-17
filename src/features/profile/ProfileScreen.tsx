@@ -163,12 +163,18 @@ export function ProfileScreen() {
                 {previewRides.map((item) => (
                   <View key={item.id} style={[styles.postItem, profileStyles.historyRow]}>
                     <View style={profileStyles.historyLeft}>
-                      <Text style={styles.postName}>{item.startPoint} {"→"} {item.endPoint}</Text>
+                      <Text style={styles.postName} numberOfLines={1}>{item.startPoint} → {item.endPoint}</Text>
                       <Text style={styles.postMeta}>{VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.createdAt)}</Text>
                     </View>
-                    <View style={profileStyles.completedPill}>
-                      <Text style={profileStyles.completedPillText}>Completed</Text>
-                    </View>
+                    {item.stopReason === "cancelled" ? (
+                      <View style={profileStyles.cancelledPill}>
+                        <Text style={profileStyles.cancelledPillText}>Cancelled</Text>
+                      </View>
+                    ) : (
+                      <View style={profileStyles.completedPill}>
+                        <Text style={profileStyles.completedPillText}>Completed</Text>
+                      </View>
+                    )}
                   </View>
                 ))}
               </View>
@@ -350,6 +356,17 @@ const profileStyles = StyleSheet.create({
   },
   completedPillText: {
     color: "#86EFAC",
+    fontSize: 12,
+    fontFamily: "InterBold",
+  },
+  cancelledPill: {
+    borderRadius: 999,
+    backgroundColor: "#3F1D1D",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cancelledPillText: {
+    color: "#FCA5A5",
     fontSize: 12,
     fontFamily: "InterBold",
   },

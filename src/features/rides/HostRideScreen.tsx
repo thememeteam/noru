@@ -84,7 +84,10 @@ export function HostRideScreen() {
   const [capacity, setCapacity] = useState(VEHICLE_CAPACITIES.auto);
   const [totalPrice, setTotalPrice] = useState("");
   const [rideStartAt, setRideStartAt] = useState<Date | null>(null);
+  const [scheduledDate, setScheduledDate] = useState<"today" | "tomorrow" | "custom">("today");
+  const [customDate, setCustomDate] = useState<Date | null>(null);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [womenOnly, setWomenOnly] = useState(false);
   const [quietRide, setQuietRide] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -207,25 +210,73 @@ export function HostRideScreen() {
     }
   };
 
+  const getBaseDate = (type?: "today" | "tomorrow" | "custom"): Date => {
+    const which = type ?? scheduledDate;
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    if (which === "tomorrow") {
+      base.setDate(base.getDate() + 1);
+      return base;
+    }
+    if (which === "custom" && customDate) {
+      const d = new Date(customDate);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+    return base;
+  };
+
+  const combineDateTime = (base: Date, time: Date): Date =>
+    new Date(base.getFullYear(), base.getMonth(), base.getDate(), time.getHours(), time.getMinutes(), 0, 0);
+
+  const handleDateChip = (type: "today" | "tomorrow" | "custom") => {
+    if (type === "custom") {
+      setShowDatePicker(true);
+      return;
+    }
+    setScheduledDate(type);
+    if (rideStartAt) setRideStartAt(combineDateTime(getBaseDate(type), rideStartAt));
+  };
+
+  const onDateChange = (_event: any, selectedDate?: Date) => {
+    if (Platform.OS === "android") setShowDatePicker(false);
+    if (selectedDate) {
+      setCustomDate(selectedDate);
+      setScheduledDate("custom");
+      if (rideStartAt) setRideStartAt(combineDateTime(selectedDate, rideStartAt));
+    }
+  };
+
   const applyTimePreset = (minutesFromNow: number) => {
-    const d = new Date();
-    d.setSeconds(0, 0);
-    d.setMinutes(d.getMinutes() + minutesFromNow);
-    setRideStartAt(d);
+    const base = getBaseDate();
+    const t = new Date();
+    t.setSeconds(0, 0);
+    t.setMinutes(t.getMinutes() + minutesFromNow);
+    setRideStartAt(combineDateTime(base, t));
   };
 
   const onTimeChange = (_event: any, selectedDate?: Date) => {
-    if (Platform.OS === "android") {
-      setShowTimePicker(false);
-    }
-    if (selectedDate) {
-      setRideStartAt(selectedDate);
-    }
+    if (Platform.OS === "android") setShowTimePicker(false);
+    if (selectedDate) setRideStartAt(combineDateTime(getBaseDate(), selectedDate));
   };
 
-  const timeLabel = rideStartAt
+  const timeOnlyLabel = rideStartAt
     ? rideStartAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
     : null;
+
+  const fullDateTimeLabel = (() => {
+    if (!rideStartAt) return null;
+    const now = new Date();
+    const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    const time = timeOnlyLabel!;
+    if (rideStartAt.toDateString() === now.toDateString()) return time;
+    if (rideStartAt.toDateString() === tomorrow.toDateString()) return `Tomorrow, ${time}`;
+    return `${rideStartAt.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}, ${time}`;
+  })();
+
+  const customChipLabel = scheduledDate === "custom" && customDate
+    ? customDate.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })
+    : "Pick date";
 
   const onCreate = async () => {
     if (isSubmittingRef.current || !canCreate || !rideStartAt) return;
@@ -248,6 +299,8 @@ export function HostRideScreen() {
       setCapacity(VEHICLE_CAPACITIES.auto);
       setTotalPrice("");
       setRideStartAt(null);
+      setScheduledDate("today");
+      setCustomDate(null);
       setWomenOnly(false);
       setQuietRide(false);
       setFieldErrors({});
@@ -366,6 +419,33 @@ export function HostRideScreen() {
           )}
 
           <View style={hostStyles.fieldGroup}>
+            <Text style={hostStyles.fieldLabel}>Date</Text>
+            <View style={styles.vehicleRow}>
+              <Pressable
+                style={[styles.vehicleChip, scheduledDate === "today" && styles.vehicleChipSelected]}
+                onPress={() => handleDateChip("today")}>
+                <Text style={[styles.vehicleChipText, scheduledDate === "today" && styles.vehicleChipTextSelected]}>
+                  Today
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.vehicleChip, scheduledDate === "tomorrow" && styles.vehicleChipSelected]}
+                onPress={() => handleDateChip("tomorrow")}>
+                <Text style={[styles.vehicleChipText, scheduledDate === "tomorrow" && styles.vehicleChipTextSelected]}>
+                  Tomorrow
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.vehicleChip, scheduledDate === "custom" && styles.vehicleChipSelected]}
+                onPress={() => handleDateChip("custom")}>
+                <Text style={[styles.vehicleChipText, scheduledDate === "custom" && styles.vehicleChipTextSelected]}>
+                  {customChipLabel}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={hostStyles.fieldGroup}>
             <Text style={hostStyles.fieldLabel}>Start time</Text>
             <View style={hostStyles.timePresetsRow}>
               {TIME_PRESETS.map((p) => (
@@ -379,11 +459,22 @@ export function HostRideScreen() {
             <Pressable
               style={[styles.input, hostStyles.timeButton]}
               onPress={() => setShowTimePicker(true)}>
-              <Text style={timeLabel ? hostStyles.timeText : hostStyles.timePlaceholder}>
-                {timeLabel ?? "Or pick a custom time"}
+              <Text style={timeOnlyLabel ? hostStyles.timeText : hostStyles.timePlaceholder}>
+                {timeOnlyLabel ?? "Or pick a custom time"}
               </Text>
             </Pressable>
           </View>
+
+          {Platform.OS === "android" && showDatePicker && (
+            <DateTimePicker
+              value={customDate ?? new Date()}
+              mode="date"
+              display="default"
+              minimumDate={new Date()}
+              onValueChange={onDateChange}
+              onDismiss={() => setShowDatePicker(false)}
+            />
+          )}
 
           {Platform.OS === "android" && showTimePicker && (
             <DateTimePicker
@@ -466,6 +557,33 @@ export function HostRideScreen() {
         </ScrollView>
       </SafeAreaView>
 
+      {/* iOS date picker */}
+      {Platform.OS === "ios" && (
+        <Modal
+          visible={showDatePicker}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowDatePicker(false)}>
+          <Pressable style={hostStyles.pickerBackdrop} onPress={() => setShowDatePicker(false)}>
+            <View style={hostStyles.pickerSheet}>
+              <View style={hostStyles.pickerHeader}>
+                <Pressable onPress={() => setShowDatePicker(false)}>
+                  <Text style={hostStyles.pickerDone}>Done</Text>
+                </Pressable>
+              </View>
+              <DateTimePicker
+                value={customDate ?? new Date()}
+                mode="date"
+                display="spinner"
+                minimumDate={new Date()}
+                onValueChange={onDateChange}
+                style={hostStyles.picker}
+              />
+            </View>
+          </Pressable>
+        </Modal>
+      )}
+
       {/* iOS time picker */}
       {Platform.OS === "ios" && (
         <Modal
@@ -523,7 +641,7 @@ export function HostRideScreen() {
 
             <View style={hostStyles.confirmRow}>
               <Text style={hostStyles.confirmLabel}>Departs</Text>
-              <Text style={hostStyles.confirmValue}>{timeLabel}</Text>
+              <Text style={hostStyles.confirmValue}>{fullDateTimeLabel}</Text>
             </View>
 
             <View style={hostStyles.confirmRow}>

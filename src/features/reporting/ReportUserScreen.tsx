@@ -117,7 +117,7 @@ export function ReportUserScreen() {
           scrollEventThrottle={16}>
           <View style={styles.card}>
             <Text style={styles.title}>Report user</Text>
-            <Text style={styles.description}>Submit an incident report for another user.</Text>
+            <Text style={styles.description}>Reports must be linked to a ride you shared with this person.</Text>
 
             <Text style={styles.sectionLabel}>User name</Text>
             <TextInput
@@ -169,7 +169,7 @@ export function ReportUserScreen() {
                           key={ride.ridePostId}
                           style={[styles.postItem, isSelected && styles.moderationSelectedItem]}
                           onPress={() => setSelectedRidePostId(ride.ridePostId)}>
-                          <Text style={styles.postName}>{ride.startPoint} {"->"} {ride.endPoint}</Text>
+                          <Text style={styles.postName}>{ride.startPoint} → {ride.endPoint}</Text>
                           <Text style={styles.postMeta}>{rideDate}</Text>
                           <Text style={styles.postMeta}>Vehicle: {ride.vehicleType}</Text>
                           <Text style={styles.postMeta}>Hosted by: {ride.riderName}</Text>

@@ -11,17 +11,18 @@ import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS } from "./constants";
 import { RouteMap } from "./RouteMap";
 
-function formatRideTime(rideStartAt?: number | null) {
-  if (!rideStartAt || !Number.isFinite(rideStartAt)) {
-    return null;
-  }
-
+function formatRideTime(rideStartAt?: number | null): string | null {
+  if (!rideStartAt || !Number.isFinite(rideStartAt)) return null;
   const date = new Date(rideStartAt);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const dayDiff = Math.round((dateMidnight - todayMidnight) / 86400000);
+  if (dayDiff === 0) return time;
+  if (dayDiff === 1) return `Tomorrow · ${time}`;
+  return `${date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} · ${time}`;
 }
 
 export function WaitingRoomScreen() {
@@ -351,54 +352,56 @@ export function WaitingRoomScreen() {
           </View>
         )}
 
-        <Pressable
-          style={({ pressed }) => [
-            waitingStyles.rideActionButton,
-            waitingStyles.startRideButton,
-            (isStarted || isStopping) && styles.buttonDisabled,
-            pressed && !isStarted && !isStopping && styles.buttonPressed,
-          ]}
-          onPress={() => void onStartRide(hostedRideData.ridePost._id)}
-          disabled={isStarted || isStopping}>
-          <Text style={waitingStyles.startRideButtonText}>
-            {isStarted ? "Ride started" : "Start ride"}
-          </Text>
-        </Pressable>
+        <View style={waitingStyles.actionFooter}>
+          <Pressable
+            style={({ pressed }) => [
+              waitingStyles.rideActionButton,
+              waitingStyles.startRideButton,
+              (isStarted || isStopping) && styles.buttonDisabled,
+              pressed && !isStarted && !isStopping && styles.buttonPressed,
+            ]}
+            onPress={() => void onStartRide(hostedRideData.ridePost._id)}
+            disabled={isStarted || isStopping}>
+            <Text style={waitingStyles.startRideButtonText}>
+              {isStarted ? "Ride started" : "Start ride"}
+            </Text>
+          </Pressable>
 
-        <View style={waitingStyles.stopRow}>
-          <Pressable
-            style={({ pressed }) => [
-              waitingStyles.rideActionButton,
-              waitingStyles.cancelRideButton,
-              isStopping && styles.buttonDisabled,
-              pressed && !isStopping && styles.buttonPressed,
-            ]}
-            onPress={() => void onStopRide(hostedRideData.ridePost._id, false)}
-            disabled={isStopping}>
-            <Text style={waitingStyles.cancelRideButtonText}>
-              {isStopping ? "Stopping..." : "Cancel"}
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              waitingStyles.rideActionButton,
-              waitingStyles.endRideButton,
-              isStopping && styles.buttonDisabled,
-              pressed && !isStopping && styles.buttonPressed,
-            ]}
-            onPress={() => void onStopRide(hostedRideData.ridePost._id, true)}
-            disabled={isStopping}>
-            <Text style={waitingStyles.endRideButtonText}>
-              {isStopping ? "Stopping..." : "End ride"}
-            </Text>
-          </Pressable>
+          <View style={waitingStyles.stopRow}>
+            <Pressable
+              style={({ pressed }) => [
+                waitingStyles.rideActionButton,
+                waitingStyles.cancelRideButton,
+                isStopping && styles.buttonDisabled,
+                pressed && !isStopping && styles.buttonPressed,
+              ]}
+              onPress={() => void onStopRide(hostedRideData.ridePost._id, false)}
+              disabled={isStopping}>
+              <Text style={waitingStyles.cancelRideButtonText}>
+                {isStopping ? "Stopping..." : "Cancel"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                waitingStyles.rideActionButton,
+                waitingStyles.endRideButton,
+                isStopping && styles.buttonDisabled,
+                pressed && !isStopping && styles.buttonPressed,
+              ]}
+              onPress={() => void onStopRide(hostedRideData.ridePost._id, true)}
+              disabled={isStopping}>
+              <Text style={waitingStyles.endRideButtonText}>
+                {isStopping ? "Stopping..." : "End ride"}
+              </Text>
+            </Pressable>
+          </View>
+
+          <AppButton
+            title="Group chat"
+            onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
+            variant="secondary"
+          />
         </View>
-
-        <AppButton
-          title="Group chat"
-          onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
-          variant="secondary"
-        />
       </>
     );
   };
@@ -527,20 +530,21 @@ export function WaitingRoomScreen() {
           </>
         )}
 
-        {joinedRideData.joinStatus === "accepted" && (
+        <View style={waitingStyles.actionFooter}>
+          {joinedRideData.joinStatus === "accepted" && (
+            <AppButton
+              title="Group chat"
+              onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
+              variant="secondary"
+            />
+          )}
           <AppButton
-            title="Group chat"
-            onPress={() => router.push({ pathname: "/chat", params: { ridePostId } })}
+            title={isLeaving ? "Leaving..." : "Leave ride"}
+            onPress={() => void onLeaveRide(joinedRideData.ridePost._id)}
+            disabled={isLeaving}
             variant="secondary"
           />
-        )}
-
-        <AppButton
-          title={isLeaving ? "Leaving..." : "Leave ride"}
-          onPress={() => void onLeaveRide(joinedRideData.ridePost._id)}
-          disabled={isLeaving}
-          variant="secondary"
-        />
+        </View>
       </>
     );
   };
@@ -598,8 +602,8 @@ const waitingStyles = StyleSheet.create({
     borderColor: "#4B5563",
     backgroundColor: "#32353B",
     borderRadius: 14,
-    padding: 14,
-    gap: 10,
+    padding: 16,
+    gap: 12,
   },
   routeBlock: {
     gap: 0,
@@ -654,7 +658,6 @@ const waitingStyles = StyleSheet.create({
   pillRow: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 4,
     flexWrap: "wrap",
   },
   pendingPill: {
@@ -696,6 +699,7 @@ const waitingStyles = StyleSheet.create({
     fontSize: 14,
     letterSpacing: 0.6,
     fontFamily: "InterBold",
+    marginTop: 8,
   },
   participantCard: {
     borderWidth: 1,
@@ -758,6 +762,10 @@ const waitingStyles = StyleSheet.create({
   startRideButton: {
     borderColor: "#1E6CCC",
     backgroundColor: "#1E6CCC",
+  },
+  actionFooter: {
+    gap: 12,
+    marginTop: 8,
   },
   startRideButtonText: {
     color: "#F8FAFC",

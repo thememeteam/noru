@@ -39,9 +39,18 @@ export function RideDetailsScreen() {
   const womenOnly = params.womenOnly === "1";
   const quietRide = params.quietRide === "1";
 
-  const timeLabel = Number.isFinite(rideStartAt) && rideStartAt !== null
-    ? new Date(rideStartAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
-    : null;
+  const timeLabel = (() => {
+    if (!Number.isFinite(rideStartAt) || rideStartAt === null) return null;
+    const date = new Date(rideStartAt);
+    const now = new Date();
+    const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+    const dayDiff = Math.round((dateMidnight - todayMidnight) / 86400000);
+    if (dayDiff === 0) return time;
+    if (dayDiff === 1) return `Tomorrow · ${time}`;
+    return `${date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} · ${time}`;
+  })();
 
   const metaParts = [
     vehicleLabel,

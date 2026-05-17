@@ -7,20 +7,18 @@ import { api } from "../../../convex/_generated/api";
 import { VEHICLE_LABELS } from "../rides/constants";
 import { useAppStyles } from "../theme/AppTheme";
 
-const rideDateFormatter = new Intl.DateTimeFormat(undefined, {
-  year: "numeric",
-  month: "short",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-});
-
-function formatRideDateTime(timestamp: number) {
-  const date = new Date(timestamp);
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown time";
-  }
-  return rideDateFormatter.format(date);
+function formatRideDateTime(rideStartAt: number | null | undefined, fallback: number): string {
+  const ts = rideStartAt ?? fallback;
+  const date = new Date(ts);
+  if (Number.isNaN(date.getTime())) return "Unknown time";
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const dayDiff = Math.round((dateMidnight - todayMidnight) / 86400000);
+  if (dayDiff === 0) return time;
+  if (dayDiff === 1) return `Tomorrow · ${time}`;
+  return `${date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} · ${time}`;
 }
 
 export function RideHistoryScreen() {
@@ -47,14 +45,20 @@ export function RideHistoryScreen() {
               {pastRides.map((item) => (
                 <View key={item.id} style={[styles.postItem, historyStyles.historyRow]}>
                   <View style={historyStyles.historyLeft}>
-                    <Text style={styles.postName}>{item.startPoint} {"→"} {item.endPoint}</Text>
+                    <Text style={styles.postName} numberOfLines={1}>{item.startPoint} → {item.endPoint}</Text>
                     <Text style={styles.postMeta}>
-                      {VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.createdAt)}
+                      {VEHICLE_LABELS[item.vehicleType]} · {formatRideDateTime(item.rideStartAt, item.createdAt)}
                     </Text>
                   </View>
-                  <View style={historyStyles.completedPill}>
-                    <Text style={historyStyles.completedPillText}>Completed</Text>
-                  </View>
+                  {item.stopReason === "cancelled" ? (
+                    <View style={historyStyles.cancelledPill}>
+                      <Text style={historyStyles.cancelledPillText}>Cancelled</Text>
+                    </View>
+                  ) : (
+                    <View style={historyStyles.completedPill}>
+                      <Text style={historyStyles.completedPillText}>Completed</Text>
+                    </View>
+                  )}
                 </View>
               ))}
             </View>
@@ -84,6 +88,17 @@ const historyStyles = StyleSheet.create({
   },
   completedPillText: {
     color: "#86EFAC",
+    fontSize: 12,
+    fontFamily: "InterBold",
+  },
+  cancelledPill: {
+    borderRadius: 999,
+    backgroundColor: "#3F1D1D",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cancelledPillText: {
+    color: "#FCA5A5",
     fontSize: 12,
     fontFamily: "InterBold",
   },

@@ -1,11 +1,10 @@
 import { useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
-import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 
 export function ModerationDashboardScreen() {
@@ -49,7 +48,7 @@ export function ModerationDashboardScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
           <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Moderation dashboard</Text>
+            <Text style={styles.title}>Moderation</Text>
             <View style={styles.moderationMetricRow}>
               <View style={styles.moderationMetricCard}>
                 <Text style={styles.moderationMetricValue}>{dashboard.openReportsCount}</Text>
@@ -61,21 +60,23 @@ export function ModerationDashboardScreen() {
               </View>
             </View>
 
-            <View style={styles.moderationFilterRow}>
-              <View style={styles.moderationFilterButtonWrap}>
-                <AppButton
-                  title="Unresolved"
-                  onPress={() => setReportFilter("unresolved")}
-                  variant={reportFilter === "unresolved" ? "primary" : "secondary"}
-                />
-              </View>
-              <View style={styles.moderationFilterButtonWrap}>
-                <AppButton
-                  title="Resolved"
-                  onPress={() => setReportFilter("resolved")}
-                  variant={reportFilter === "resolved" ? "primary" : "secondary"}
-                />
-              </View>
+            <View style={styles.vehicleRow}>
+              <Pressable
+                style={[styles.vehicleChip, reportFilter === "unresolved" && styles.vehicleChipSelected]}
+                onPress={() => setReportFilter("unresolved")}
+              >
+                <Text style={[styles.vehicleChipText, reportFilter === "unresolved" && styles.vehicleChipTextSelected]}>
+                  Unresolved
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.vehicleChip, reportFilter === "resolved" && styles.vehicleChipSelected]}
+                onPress={() => setReportFilter("resolved")}
+              >
+                <Text style={[styles.vehicleChipText, reportFilter === "resolved" && styles.vehicleChipTextSelected]}>
+                  Resolved
+                </Text>
+              </Pressable>
             </View>
 
             <Text style={styles.sectionLabel}>{reportFilter === "unresolved" ? "Unresolved reports" : "Resolved reports"}</Text>
@@ -83,25 +84,21 @@ export function ModerationDashboardScreen() {
               <Text style={styles.description}>No {reportFilter} incidents found.</Text>
             ) : (
               <View style={styles.postList}>
-                {filteredIncidents.map((report) => {
-                  return (
-                    <View key={report._id} style={styles.postItem}>
-                      <Text style={styles.postName}>{report.categoryLabel}</Text>
-                      <Text style={styles.postMeta}>Reported: {report.reportedName} · by {report.reporterName}</Text>
-                      <Text style={styles.postMeta}>Status: {report.status}</Text>
-                      <AppButton
-                        title="View"
-                        onPress={() =>
-                          router.push({
-                            pathname: "/moderation/[reportId]",
-                            params: { reportId: report._id },
-                          })
-                        }
-                        variant="secondary"
-                      />
-                    </View>
-                  );
-                })}
+                {filteredIncidents.map((report) => (
+                  <Pressable
+                    key={report._id}
+                    style={({ pressed }) => [styles.postItem, pressed && styles.buttonPressed]}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/moderation/[reportId]",
+                        params: { reportId: report._id },
+                      })
+                    }
+                  >
+                    <Text style={styles.postName}>{report.categoryLabel}</Text>
+                    <Text style={styles.postMeta}>{report.reportedName} · reported by {report.reporterName}</Text>
+                  </Pressable>
+                ))}
               </View>
             )}
           </View>

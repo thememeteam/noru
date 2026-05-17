@@ -1,55 +1,35 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
-import { useNotifications } from "../notifications/NotificationProvider";
 import { deriveDisplayName, getAvatarInitial } from "../../lib/userDisplay";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS, VEHICLE_OPTIONS } from "./constants";
 
-function formatRideTime(rideStartAt?: number | null) {
-  if (!rideStartAt || !Number.isFinite(rideStartAt)) {
-    return null;
-  }
-
+function formatRideTime(rideStartAt?: number | null): string | null {
+  if (!rideStartAt || !Number.isFinite(rideStartAt)) return null;
   const date = new Date(rideStartAt);
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const time = date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const dayDiff = Math.round((dateMidnight - todayMidnight) / 86400000);
+  if (dayDiff === 0) return time;
+  if (dayDiff === 1) return `Tomorrow · ${time}`;
+  return `${date.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })} · ${time}`;
 }
 
 export function RidePickScreen() {
   const styles = useAppStyles();
-  const { showLocalToast } = useNotifications();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
   const postsRaw = useQuery(api.rides.listJoinableRidePosts);
   const posts = postsRaw ?? [];
   const postsLoading = postsRaw === undefined;
 
-  const prevRideIds = useRef<Set<string> | null>(null);
-  useEffect(() => {
-    if (!postsRaw) return;
-    const currentIds = new Set(postsRaw.map((p) => p._id));
-    if (prevRideIds.current === null) {
-      prevRideIds.current = currentIds;
-      return;
-    }
-    const newRides = postsRaw.filter((p) => !prevRideIds.current!.has(p._id));
-    if (newRides.length > 0) {
-      const first = newRides[0];
-      showLocalToast(
-        "New ride available",
-        `${first.startPoint} → ${first.endPoint}`,
-        "newRide",
-      );
-    }
-    prevRideIds.current = currentIds;
-  }, [postsRaw]);
   const activeJoinedRide = useQuery(api.rides.getMyActiveJoinedRide);
   const activeHostedRide = useQuery(api.rides.getMyActiveHostedRide);
   const joinRidePost = useMutation(api.rides.joinRidePost);

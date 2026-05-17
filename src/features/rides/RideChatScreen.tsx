@@ -340,7 +340,6 @@ const MessageBubble = React.memo(function MessageBubble({
         </Animated.View>
       )}
 
-      {/* Bubble: entrance + swipe transforms combined */}
       <Pressable
         onLongPress={() => onOpenTray(item._id)}
         onPress={handleBubbleTap}
@@ -648,7 +647,6 @@ const chatStyles = StyleSheet.create({
   messageRowOwn: {
     alignItems: "flex-end",
   },
-
   // Bubbles
   bubble: {
     alignSelf: "flex-start",

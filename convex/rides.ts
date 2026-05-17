@@ -197,6 +197,8 @@ export const getMyRideHistory = query({
           endPoint: ridePost.endPoint,
           vehicleType: ridePost.vehicleType,
           status: ridePost.isStopped ? "Stopped" : "Joined",
+          stopReason: ridePost.stopReason ?? null,
+          rideStartAt: ridePost.rideStartAt ?? null,
           createdAt: join.createdAt,
         };
       }),
@@ -209,6 +211,8 @@ export const getMyRideHistory = query({
       endPoint: post.endPoint,
       vehicleType: post.vehicleType,
       status: post.isStopped ? "Stopped" : "Active",
+      stopReason: post.stopReason ?? null,
+      rideStartAt: post.rideStartAt ?? null,
       createdAt: post.createdAt,
     }));
 
@@ -527,15 +531,6 @@ export const joinRidePost = mutation({
       isFull: nextIsFull,
     });
 
-    await ctx.db.insert("userNotifications", {
-      userId: ridePost.userId,
-      title: "New join request",
-      message: `${joineeName} wants to join your ride to ${ridePost.endPoint}.`,
-      type: "joinRequest",
-      isRead: false,
-      ridePostId: args.ridePostId,
-      createdAt: Date.now(),
-    });
   },
 });
 
@@ -573,19 +568,6 @@ export const acceptJoineeForRide = mutation({
     });
 
     await updatePricePerPersonForRide(ctx, args.ridePostId);
-
-    const refreshedRidePost = await ctx.db.get(args.ridePostId);
-    if (refreshedRidePost) {
-      await ctx.db.insert("userNotifications", {
-        userId: args.joineeUserId,
-        title: "You're in",
-        message: `${refreshedRidePost.riderName} accepted you for the ride to ${refreshedRidePost.endPoint}.`,
-        type: "rideAccepted",
-        isRead: false,
-        ridePostId: args.ridePostId,
-        createdAt: Date.now(),
-      });
-    }
   },
 });
 
@@ -619,26 +601,6 @@ export const startRidePost = mutation({
       startedAt: Date.now(),
       isFull: true,
     });
-
-    const joins = await ctx.db
-      .query("rideJoins")
-      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
-      .collect();
-
-    const acceptedJoins = joins.filter((j) => (j.status ?? "pending") === "accepted");
-    await Promise.all(
-      acceptedJoins.map((join) =>
-        ctx.db.insert("userNotifications", {
-          userId: join.userId,
-          title: "Ride started",
-          message: `${ridePost.riderName} has started the ride to ${ridePost.endPoint}.`,
-          type: "rideStarted",
-          isRead: false,
-          ridePostId: args.ridePostId,
-          createdAt: Date.now(),
-        }),
-      ),
-    );
   },
 });
 
@@ -719,71 +681,6 @@ export const removeJoineeFromRide = mutation({
     if ((existingJoin.status ?? "pending") === "accepted") {
       await updatePricePerPersonForRide(ctx, args.ridePostId);
     }
-
-    await ctx.db.insert("userNotifications", {
-      userId: args.joineeUserId,
-      title: "Removed from ride",
-      message: `${ridePost.riderName} removed you from the ride ${ridePost.startPoint} -> ${ridePost.endPoint}.`,
-      type: "rideRemoved",
-      isRead: false,
-      ridePostId: args.ridePostId,
-      createdAt: Date.now(),
-    });
-  },
-});
-
-export const getMyUnreadNotifications = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("You must be signed in.");
-    }
-
-    return await ctx.db
-      .query("userNotifications")
-      .withIndex("by_user_id_and_is_read", (q) => q.eq("userId", userId).eq("isRead", false))
-      .order("desc")
-      .take(10);
-  },
-});
-
-export const markNotificationRead = mutation({
-  args: {
-    notificationId: v.id("userNotifications"),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("You must be signed in.");
-    }
-
-    const notification = await ctx.db.get(args.notificationId);
-    if (!notification) {
-      throw new Error("Notification not found.");
-    }
-    if (notification.userId !== userId) {
-      throw new Error("You cannot modify this notification.");
-    }
-
-    await ctx.db.patch(args.notificationId, { isRead: true });
-  },
-});
-
-export const markAllNotificationsRead = mutation({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new Error("You must be signed in.");
-    }
-
-    const unread = await ctx.db
-      .query("userNotifications")
-      .withIndex("by_user_id_and_is_read", (q) => q.eq("userId", userId).eq("isRead", false))
-      .collect();
-
-    await Promise.all(unread.map((n) => ctx.db.patch(n._id, { isRead: true })));
   },
 });
 
@@ -1016,26 +913,6 @@ export const stopRidePost = mutation({
       stopReason: args.reason,
     });
 
-    if (args.reason === "cancelled") {
-      const joins = await ctx.db
-        .query("rideJoins")
-        .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
-        .collect();
-
-      await Promise.all(
-        joins.map((join) =>
-          ctx.db.insert("userNotifications", {
-            userId: join.userId,
-            title: "Ride cancelled",
-            message: `${ridePost.riderName} cancelled the ride ${ridePost.startPoint} -> ${ridePost.endPoint}.`,
-            type: "rideRemoved",
-            isRead: false,
-            ridePostId: args.ridePostId,
-            createdAt: Date.now(),
-          }),
-        ),
-      );
-    }
   },
 });
 

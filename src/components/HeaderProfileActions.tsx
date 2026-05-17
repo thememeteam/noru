@@ -1,15 +1,13 @@
 import { useQuery } from "convex/react";
 import { router } from "expo-router";
 import React from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
 import { api } from "../../convex/_generated/api";
-import { useNotifications } from "../features/notifications/NotificationProvider";
 import { deriveDisplayName, getAvatarInitial } from "../lib/userDisplay";
 
 export function HeaderProfileActions() {
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
-  const { unreadCount, clearAll } = useNotifications();
   const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
   const avatarInitial = getAvatarInitial(displayName);
 
@@ -18,7 +16,6 @@ export function HeaderProfileActions() {
   }
 
   const handlePress = () => {
-    if (unreadCount > 0) clearAll();
     router.push("/profile");
   };
 
@@ -53,22 +50,7 @@ export function HeaderProfileActions() {
             </Text>
           </View>
         )}
-        {unreadCount > 0 && <View style={badgeStyles.dot} />}
       </Pressable>
     </View>
   );
 }
-
-const badgeStyles = StyleSheet.create({
-  dot: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "#60A5FA",
-    borderWidth: 1.5,
-    borderColor: "#2E2E2E",
-  },
-});

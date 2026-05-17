@@ -82,23 +82,6 @@ export default defineSchema({
     removedByUserId: v.id("users"),
     reason: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
-  userNotifications: defineTable({
-    userId: v.id("users"),
-    title: v.string(),
-    message: v.string(),
-    type: v.union(
-      v.literal("rideRemoved"),
-      v.literal("rideAccepted"),
-      v.literal("rideStarted"),
-      v.literal("joinRequest"),
-      v.literal("info"),
-    ),
-    isRead: v.boolean(),
-    ridePostId: v.optional(v.id("ridePosts")),
-    createdAt: v.number(),
-  })
-    .index("by_user_id_and_created_at", ["userId", "createdAt"])
-    .index("by_user_id_and_is_read", ["userId", "isRead"]),
   userRatings: defineTable({
     ridePostId: v.id("ridePosts"),
     raterUserId: v.id("users"),

@@ -90,7 +90,7 @@ export function ModerationReportDetailScreen() {
         <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
           {/* Status banner */}
           <View style={[reportDetailStyles.statusBanner, selectedReport.status === "resolved" ? reportDetailStyles.statusBannerResolved : reportDetailStyles.statusBannerOpen]}>
-            <Text style={reportDetailStyles.statusBannerText}>
+            <Text style={[reportDetailStyles.statusBannerText, selectedReport.status === "resolved" ? reportDetailStyles.statusBannerTextResolved : reportDetailStyles.statusBannerTextOpen]}>
               {selectedReport.status === "resolved" ? "RESOLVED" : "OPEN"}
             </Text>
           </View>
@@ -99,26 +99,28 @@ export function ModerationReportDetailScreen() {
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>INCIDENT</Text>
             <Text style={reportDetailStyles.categoryTitle}>{selectedReport.categoryLabel}</Text>
-            <View style={reportDetailStyles.metaRow}>
-              <Text style={reportDetailStyles.metaLabel}>Reported user</Text>
-              <Text style={reportDetailStyles.metaValue}>{selectedReport.reportedName}</Text>
-            </View>
-            <View style={reportDetailStyles.divider} />
-            <View style={reportDetailStyles.metaRow}>
-              <Text style={reportDetailStyles.metaLabel}>Reported by</Text>
-              <Text style={reportDetailStyles.metaValue}>{selectedReport.reporterName}</Text>
-            </View>
-            <View style={reportDetailStyles.divider} />
-            <View style={reportDetailStyles.metaRow}>
-              <Text style={reportDetailStyles.metaLabel}>Submitted at</Text>
-              <Text style={reportDetailStyles.metaValue}>{new Date(selectedReport.createdAt).toLocaleString()}</Text>
+            <View>
+              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                <Text style={styles.moderationContextLabel}>Reported user</Text>
+                <Text style={styles.moderationContextValue}>{selectedReport.reportedName}</Text>
+              </View>
+              <View style={styles.moderationContextDivider} />
+              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                <Text style={styles.moderationContextLabel}>Reported by</Text>
+                <Text style={styles.moderationContextValue}>{selectedReport.reporterName}</Text>
+              </View>
+              <View style={styles.moderationContextDivider} />
+              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                <Text style={styles.moderationContextLabel}>Submitted at</Text>
+                <Text style={styles.moderationContextValue}>{new Date(selectedReport.createdAt).toLocaleString()}</Text>
+              </View>
             </View>
           </View>
 
           {/* Details */}
           <View style={styles.card}>
             <Text style={styles.sectionLabel}>REPORTER'S DESCRIPTION</Text>
-            <Text style={reportDetailStyles.detailsText}>{selectedReport.details}</Text>
+            <Text style={[reportDetailStyles.detailsText, { fontStyle: "italic" }]}>{selectedReport.details}</Text>
           </View>
 
           {/* Ride context */}
@@ -129,14 +131,16 @@ export function ModerationReportDetailScreen() {
                 <Text style={reportDetailStyles.routeText}>
                   {selectedReport.rideContext.startPoint} → {selectedReport.rideContext.endPoint}
                 </Text>
-                <View style={reportDetailStyles.metaRow}>
-                  <Text style={reportDetailStyles.metaLabel}>Vehicle</Text>
-                  <Text style={reportDetailStyles.metaValue}>{selectedReport.rideContext.vehicleType}</Text>
-                </View>
-                <View style={reportDetailStyles.divider} />
-                <View style={reportDetailStyles.metaRow}>
-                  <Text style={reportDetailStyles.metaLabel}>Host</Text>
-                  <Text style={reportDetailStyles.metaValue}>{selectedReport.rideContext.riderName}</Text>
+                <View>
+                  <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                    <Text style={styles.moderationContextLabel}>Vehicle</Text>
+                    <Text style={styles.moderationContextValue}>{selectedReport.rideContext.vehicleType}</Text>
+                  </View>
+                  <View style={styles.moderationContextDivider} />
+                  <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                    <Text style={styles.moderationContextLabel}>Host</Text>
+                    <Text style={styles.moderationContextValue}>{selectedReport.rideContext.riderName}</Text>
+                  </View>
                 </View>
               </>
             ) : (
@@ -145,24 +149,20 @@ export function ModerationReportDetailScreen() {
           </View>
 
           {/* Actions */}
-          <View style={styles.quickRow}>
-            <View style={styles.moderationActionFlex}>
-              <AppButton
-                title={
-                  isUpdatingStatus
-                    ? "Updating..."
-                    : selectedReport.status === "resolved"
-                      ? "Mark unresolved"
-                      : "Mark resolved"
-                }
-                onPress={() => void onToggleStatus()}
-                disabled={isUpdatingStatus}
-                variant="secondary"
-              />
-            </View>
-            <View style={styles.moderationActionFlex}>
-              <AppButton title="Back" onPress={() => router.back()} variant="secondary" />
-            </View>
+          <View style={styles.buttonRow}>
+            <AppButton
+              title={
+                isUpdatingStatus
+                  ? "Updating..."
+                  : selectedReport.status === "resolved"
+                    ? "Mark unresolved"
+                    : "Mark resolved"
+              }
+              onPress={() => void onToggleStatus()}
+              disabled={isUpdatingStatus}
+              variant="secondary"
+            />
+            <AppButton title="Back" onPress={() => router.back()} variant="secondary" />
           </View>
         </ScrollView>
       </SafeAreaView>
@@ -185,38 +185,20 @@ const reportDetailStyles = StyleSheet.create({
     backgroundColor: "#052E16",
   },
   statusBannerText: {
-    color: "#F3F4F6",
     fontSize: 12,
     fontFamily: "InterBold",
     letterSpacing: 1,
+  },
+  statusBannerTextOpen: {
+    color: "#DBEAFE",
+  },
+  statusBannerTextResolved: {
+    color: "#86EFAC",
   },
   categoryTitle: {
     color: "#F3F4F6",
     fontSize: 20,
     fontFamily: "InterBold",
-    marginBottom: 12,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 6,
-  },
-  metaLabel: {
-    color: "#9CA3AF",
-    fontSize: 13,
-    fontFamily: "InterMedium",
-  },
-  metaValue: {
-    color: "#F3F4F6",
-    fontSize: 14,
-    fontFamily: "InterMedium",
-    flexShrink: 1,
-    textAlign: "right",
-  },
-  divider: {
-    height: 1,
-    backgroundColor: "#3F4652",
   },
   detailsText: {
     color: "#E5E7EB",
@@ -228,6 +210,5 @@ const reportDetailStyles = StyleSheet.create({
     color: "#F3F4F6",
     fontSize: 17,
     fontFamily: "InterBold",
-    marginBottom: 10,
   },
 });
