@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { useNotifications } from "../notifications/NotificationProvider";
 import { deriveDisplayName, getAvatarInitial } from "../../lib/userDisplay";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS, VEHICLE_OPTIONS } from "./constants";
@@ -24,10 +25,31 @@ function formatRideTime(rideStartAt?: number | null) {
 
 export function RidePickScreen() {
   const styles = useAppStyles();
+  const { showLocalToast } = useNotifications();
   const onboardingState = useQuery(api.onboarding.getOnboardingState);
   const postsRaw = useQuery(api.rides.listJoinableRidePosts);
   const posts = postsRaw ?? [];
   const postsLoading = postsRaw === undefined;
+
+  const prevRideIds = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    if (!postsRaw) return;
+    const currentIds = new Set(postsRaw.map((p) => p._id));
+    if (prevRideIds.current === null) {
+      prevRideIds.current = currentIds;
+      return;
+    }
+    const newRides = postsRaw.filter((p) => !prevRideIds.current!.has(p._id));
+    if (newRides.length > 0) {
+      const first = newRides[0];
+      showLocalToast(
+        "New ride available",
+        `${first.startPoint} → ${first.endPoint}`,
+        "newRide",
+      );
+    }
+    prevRideIds.current = currentIds;
+  }, [postsRaw]);
   const activeJoinedRide = useQuery(api.rides.getMyActiveJoinedRide);
   const activeHostedRide = useQuery(api.rides.getMyActiveHostedRide);
   const joinRidePost = useMutation(api.rides.joinRidePost);
@@ -39,6 +61,8 @@ export function RidePickScreen() {
     name: string;
     photoUrl: string | null;
     registrationNumber: string | null;
+    ratingAverage: number | null;
+    ratingCount: number;
   } | null>(null);
   const displayName = deriveDisplayName(onboardingState?.displayName, onboardingState?.universityEmail);
   const firstName = displayName.split(" ")[0] || "Student";
@@ -92,6 +116,22 @@ export function RidePickScreen() {
             text: "Go to waiting room",
             onPress: () =>
               router.replace({ pathname: "/waiting", params: { ridePostId: activeHostedRide.ridePostId } }),
+          },
+          { text: "Cancel", style: "cancel" },
+        ],
+      );
+      return;
+    }
+
+    if (activeJoinedRide) {
+      Alert.alert(
+        "You're already in a ride",
+        "Leave your current ride before hosting a new one.",
+        [
+          {
+            text: "Go to waiting room",
+            onPress: () =>
+              router.push({ pathname: "/waiting", params: { ridePostId: activeJoinedRide.ridePostId } }),
           },
           { text: "Cancel", style: "cancel" },
         ],
@@ -175,9 +215,17 @@ export function RidePickScreen() {
         {activeHostedRide ? (
           <View style={ridePickStyles.rideCard}>
             <Text style={ridePickStyles.rideRoute}>You are hosting a ride</Text>
-            <Text style={ridePickStyles.rideMeta}>
-              {activeHostedRide.startPoint} → {activeHostedRide.endPoint}
-            </Text>
+            <View style={ridePickStyles.routeCompact}>
+              <View style={ridePickStyles.routeStopRowCompact}>
+                <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotOriginCompact]} />
+                <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{activeHostedRide.startPoint}</Text>
+              </View>
+              <View style={ridePickStyles.routeConnectorCompact} />
+              <View style={ridePickStyles.routeStopRowCompact}>
+                <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotDestCompact]} />
+                <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{activeHostedRide.endPoint}</Text>
+              </View>
+            </View>
             <Pressable
               style={({ pressed }) => [ridePickStyles.requestButton, pressed && ridePickStyles.buttonPressed]}
               onPress={() =>
@@ -189,7 +237,17 @@ export function RidePickScreen() {
         ) : activeJoinedRide ? (
           <View style={ridePickStyles.rideCard}>
             <Text style={ridePickStyles.rideRoute}>You are currently in a ride</Text>
-            <Text style={ridePickStyles.rideMeta}>{activeJoinedRide.startPoint} → {activeJoinedRide.endPoint}</Text>
+            <View style={ridePickStyles.routeCompact}>
+              <View style={ridePickStyles.routeStopRowCompact}>
+                <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotOriginCompact]} />
+                <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{activeJoinedRide.startPoint}</Text>
+              </View>
+              <View style={ridePickStyles.routeConnectorCompact} />
+              <View style={ridePickStyles.routeStopRowCompact}>
+                <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotDestCompact]} />
+                <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{activeJoinedRide.endPoint}</Text>
+              </View>
+            </View>
             <Pressable
               style={({ pressed }) => [ridePickStyles.requestButton, pressed && ridePickStyles.buttonPressed]}
               onPress={() =>
@@ -251,7 +309,17 @@ export function RidePickScreen() {
                     key={post._id}
                     style={ridePickStyles.rideCard}>
                     <View style={ridePickStyles.rideHeaderRow}>
-                      <Text style={ridePickStyles.rideRoute}>{post.startPoint} → {post.endPoint}</Text>
+                      <View style={ridePickStyles.routeCompact}>
+                        <View style={ridePickStyles.routeStopRowCompact}>
+                          <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotOriginCompact]} />
+                          <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{post.startPoint}</Text>
+                        </View>
+                        <View style={ridePickStyles.routeConnectorCompact} />
+                        <View style={ridePickStyles.routeStopRowCompact}>
+                          <View style={[ridePickStyles.routeDotCompact, ridePickStyles.routeDotDestCompact]} />
+                          <Text style={ridePickStyles.routeStopTextCompact} numberOfLines={1}>{post.endPoint}</Text>
+                        </View>
+                      </View>
                       <View style={ridePickStyles.pricePill}>
                         <Text style={ridePickStyles.pricePillText}>{priceLabel}</Text>
                       </View>
@@ -269,6 +337,8 @@ export function RidePickScreen() {
                               name: post.riderName,
                               photoUrl: post.riderPhotoUrl ?? null,
                               registrationNumber: extractRegistrationNumber(post.riderName, null),
+                              ratingAverage: (post as any).riderRatingAverage ?? null,
+                              ratingCount: (post as any).riderRatingCount ?? 0,
                             })
                           }>
                           {post.riderPhotoUrl ? (
@@ -319,11 +389,25 @@ export function RidePickScreen() {
                       <Text style={styles.overlayProfileAvatarFallbackText}>U</Text>
                     </View>
                   )}
-                  <View>
+                  <View style={{ flex: 1, gap: 4 }}>
                     <Text style={styles.postName}>{selectedProfile.name}</Text>
                     <Text style={styles.postMeta}>
                       Reg. no.: {selectedProfile.registrationNumber ?? "N/A"}
                     </Text>
+                    {selectedProfile.ratingAverage !== null ? (
+                      <View style={ridePickStyles.overlayRatingRow}>
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Text key={i} style={[ridePickStyles.overlayStarGlyph, i < Math.round(selectedProfile.ratingAverage!) && ridePickStyles.overlayStarFilled]}>
+                            {i < Math.round(selectedProfile.ratingAverage!) ? "★" : "☆"}
+                          </Text>
+                        ))}
+                        <Text style={ridePickStyles.overlayRatingText}>
+                          {selectedProfile.ratingAverage.toFixed(1)} ({selectedProfile.ratingCount})
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.postMeta}>No ratings yet</Text>
+                    )}
                   </View>
                 </View>
               </>
@@ -489,8 +573,44 @@ const ridePickStyles = StyleSheet.create({
   rideHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 8,
+  },
+  routeCompact: {
+    flex: 1,
+  },
+  routeStopRowCompact: {
+    flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  routeDotCompact: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    flexShrink: 0,
+  },
+  routeDotOriginCompact: {
+    borderColor: "#60A5FA",
+    backgroundColor: "#1e3a5f",
+  },
+  routeDotDestCompact: {
+    borderColor: "#34D399",
+    backgroundColor: "#052e16",
+  },
+  routeConnectorCompact: {
+    width: 1.5,
+    height: 8,
+    backgroundColor: "#4B5563",
+    marginLeft: 3.25,
+    marginVertical: 2,
+  },
+  routeStopTextCompact: {
+    flex: 1,
+    color: "#F3F4F6",
+    fontSize: 15,
+    fontFamily: "InterBold",
   },
   rideFooterRow: {
     flexDirection: "row",
@@ -568,5 +688,24 @@ const ridePickStyles = StyleSheet.create({
     color: "#9CA3AF",
     fontSize: 14,
     fontFamily: "InterMedium",
+  },
+  overlayRatingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  overlayStarGlyph: {
+    fontSize: 14,
+    color: "#3A3F47",
+    lineHeight: 18,
+  },
+  overlayStarFilled: {
+    color: "#F59E0B",
+  },
+  overlayRatingText: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontFamily: "InterMedium",
+    marginLeft: 2,
   },
 });

@@ -29,15 +29,21 @@ async function getUserRatingSummaryForUser(ctx: any, userId: any) {
     .withIndex("by_ratee_user_id", (q: any) => q.eq("rateeUserId", userId))
     .collect();
 
-  if (ratings.length === 0) {
+  const withRating = ratings.filter((r: any) => typeof r.rating === "number");
+
+  if (withRating.length === 0) {
     return {
       ratingAverage: null,
       ratingCount: 0,
     };
   }
+
+  const sum = withRating.reduce((acc: number, r: any) => acc + r.rating, 0);
+  const avg = Math.round((sum / withRating.length) * 10) / 10;
+
   return {
-    ratingAverage: null,
-    ratingCount: ratings.length,
+    ratingAverage: avg,
+    ratingCount: withRating.length,
   };
 }
 
@@ -76,11 +82,14 @@ export const listJoinableRidePosts = query({
     const postsWithMeta = await Promise.all(
       posts.map(async (post) => {
         const riderPhotoUrl = await getProfilePhotoUrl(ctx, post.userId);
+        const riderRating = await getUserRatingSummaryForUser(ctx, post.userId);
 
         return {
           ...post,
           isMine: post.userId === userId,
           riderPhotoUrl,
+          riderRatingAverage: riderRating.ratingAverage,
+          riderRatingCount: riderRating.ratingCount,
         };
       }),
     );
@@ -254,6 +263,19 @@ export const createRidePost = mutation({
     for (const post of existingActivePosts) {
       if (!post.isStopped) {
         throw new Error("You already have an active ride. Stop it first.");
+      }
+    }
+
+    const userJoins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .order("desc")
+      .collect();
+
+    for (const join of userJoins) {
+      const joinedPost = await ctx.db.get(join.ridePostId);
+      if (joinedPost && !joinedPost.isStopped) {
+        throw new Error("You cannot host a ride while you're in another ride. Leave it first.");
       }
     }
 
@@ -504,6 +526,16 @@ export const joinRidePost = mutation({
       joinedCount: nextJoinedCount,
       isFull: nextIsFull,
     });
+
+    await ctx.db.insert("userNotifications", {
+      userId: ridePost.userId,
+      title: "New join request",
+      message: `${joineeName} wants to join your ride to ${ridePost.endPoint}.`,
+      type: "joinRequest",
+      isRead: false,
+      ridePostId: args.ridePostId,
+      createdAt: Date.now(),
+    });
   },
 });
 
@@ -541,6 +573,19 @@ export const acceptJoineeForRide = mutation({
     });
 
     await updatePricePerPersonForRide(ctx, args.ridePostId);
+
+    const refreshedRidePost = await ctx.db.get(args.ridePostId);
+    if (refreshedRidePost) {
+      await ctx.db.insert("userNotifications", {
+        userId: args.joineeUserId,
+        title: "You're in",
+        message: `${refreshedRidePost.riderName} accepted you for the ride to ${refreshedRidePost.endPoint}.`,
+        type: "rideAccepted",
+        isRead: false,
+        ridePostId: args.ridePostId,
+        createdAt: Date.now(),
+      });
+    }
   },
 });
 
@@ -574,6 +619,26 @@ export const startRidePost = mutation({
       startedAt: Date.now(),
       isFull: true,
     });
+
+    const joins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+
+    const acceptedJoins = joins.filter((j) => (j.status ?? "pending") === "accepted");
+    await Promise.all(
+      acceptedJoins.map((join) =>
+        ctx.db.insert("userNotifications", {
+          userId: join.userId,
+          title: "Ride started",
+          message: `${ridePost.riderName} has started the ride to ${ridePost.endPoint}.`,
+          type: "rideStarted",
+          isRead: false,
+          ridePostId: args.ridePostId,
+          createdAt: Date.now(),
+        }),
+      ),
+    );
   },
 });
 
@@ -705,6 +770,23 @@ export const markNotificationRead = mutation({
   },
 });
 
+export const markAllNotificationsRead = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const unread = await ctx.db
+      .query("userNotifications")
+      .withIndex("by_user_id_and_is_read", (q) => q.eq("userId", userId).eq("isRead", false))
+      .collect();
+
+    await Promise.all(unread.map((n) => ctx.db.patch(n._id, { isRead: true })));
+  },
+});
+
 export const getRideFeedbackTargets = query({
   args: {
     ridePostId: v.id("ridePosts"),
@@ -766,6 +848,7 @@ export const submitRideUserFeedback = mutation({
     ratings: v.array(
       v.object({
         rateeUserId: v.id("users"),
+        rating: v.number(),
         whatWasGood: v.optional(v.string()),
         whatWasBad: v.optional(v.string()),
         anythingElse: v.optional(v.string()),
@@ -811,8 +894,11 @@ export const submitRideUserFeedback = mutation({
         )
         .first();
 
+      const clampedRating = Math.max(1, Math.min(5, Math.round(item.rating)));
+
       if (existing) {
         await ctx.db.patch(existing._id, {
+          rating: clampedRating,
           whatWasGood: item.whatWasGood?.trim() || undefined,
           whatWasBad: item.whatWasBad?.trim() || undefined,
           anythingElse: item.anythingElse?.trim() || undefined,
@@ -823,6 +909,7 @@ export const submitRideUserFeedback = mutation({
           ridePostId: args.ridePostId,
           raterUserId: userId,
           rateeUserId: item.rateeUserId,
+          rating: clampedRating,
           whatWasGood: item.whatWasGood?.trim() || undefined,
           whatWasBad: item.whatWasBad?.trim() || undefined,
           anythingElse: item.anythingElse?.trim() || undefined,
@@ -847,16 +934,21 @@ export const getMyRatingSummary = query({
       .withIndex("by_ratee_user_id", (q: any) => q.eq("rateeUserId", userId))
       .collect();
 
-    if (ratings.length === 0) {
+    const withRating = ratings.filter((r: any) => typeof r.rating === "number");
+
+    if (withRating.length === 0) {
       return {
         averageRating: null,
         totalRatings: 0,
       };
     }
 
+    const sum = withRating.reduce((acc: number, r: any) => acc + r.rating, 0);
+    const avg = Math.round((sum / withRating.length) * 10) / 10;
+
     return {
-      averageRating: null,
-      totalRatings: ratings.length,
+      averageRating: avg,
+      totalRatings: withRating.length,
     };
   },
 });
@@ -888,12 +980,13 @@ export const getMyRatingReviews = query({
           id: rating._id,
           reviewerName: reviewer?.name?.trim() || reviewer?.email?.trim() || "Student",
           note,
+          rating: typeof rating.rating === "number" ? rating.rating : null,
           createdAt: rating.updatedAt ?? rating.createdAt,
         };
       }),
     );
 
-    return reviews.filter((review) => review.note);
+    return reviews.filter((review) => review.note !== null || review.rating !== null);
   },
 });
 

@@ -5,7 +5,14 @@
       "Bash(node *)",
       "Bash(npx tsc *)",
       "Bash(bunx tsc *)",
-      "Bash(bunx expo *)"
+      "Bash(bunx expo *)",
+      "Bash(dir C:\\\\Users\\\\rish9\\\\Documents\\\\noru *)",
+      "Bash(xargs grep -l \"SignedOut\\\\|signIn\\\\|SignIn\\\\|login\\\\|Login\")",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Skill(impeccable:impeccable)",
+      "Bash(npx expo *)",
+      "Bash(Remove-Item *)",
+      "Bash(findstr /i \"map\\\\|expo-map\")"
     ]
   }
 }

@@ -26,7 +26,12 @@
       "predictiveBackGestureEnabled": false,
       "softwareKeyboardLayoutMode": "resize",
       "package": "io.github.thememeteam.noru",
-      "versionCode": 2
+      "versionCode": 2,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDFSnXaNt0AUVA-fo7RgbDOmCh9OWmMOAs"
+        }
+      }
     },
     "plugins": [
       "expo-secure-store",

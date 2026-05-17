@@ -45,11 +45,11 @@ export function SignedOutStep() {
       }
 
       Animated.parallel([
-        // Ring springs in first
-        Animated.spring(ringScale, {
+        // Ring eases in first
+        Animated.timing(ringScale, {
           toValue: 1,
-          tension: 160,
-          friction: 12,
+          duration: 320,
+          easing: EASE_OUT_QUART,
           useNativeDriver: true,
         }),
 
@@ -131,14 +131,6 @@ export function SignedOutStep() {
   return (
     <View style={styles.centeredWrap}>
       <View style={styles.signInCard}>
-
-        {/* Trust signal: cobalt verification ring */}
-        <Animated.View style={[localStyles.ringWrap, { transform: [{ scale: ringScale }] }]}>
-          <View style={localStyles.ringOuter}>
-            <View style={localStyles.ringInner} />
-          </View>
-        </Animated.View>
-
         {/* Brand identity */}
         <View style={styles.signInHeader}>
           <Animated.Text
@@ -158,7 +150,7 @@ export function SignedOutStep() {
         </View>
 
         <Animated.Text style={[styles.signInHeadline, { opacity: headlineOpacity }]}>
-          Sign in with your university account to get started
+          Rides with students you share a campus with.
         </Animated.Text>
 
         <Animated.View style={{ opacity: buttonOpacity, transform: [{ translateY: buttonSlide }] }}>

@@ -8,6 +8,7 @@ import { Text, TextInput, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { HeaderProfileActions } from "../components/HeaderProfileActions";
+import { NotificationProvider } from "../features/notifications/NotificationProvider";
 import { AppThemeProvider, useAppTheme } from "../features/theme/AppTheme";
 import { convex, convexAuthTokenStorage } from "../lib/convex";
 
@@ -51,6 +52,7 @@ function AppNavigator() {
       client={convex}
       storage={convexAuthTokenStorage}
       storageNamespace="noru">
+      <NotificationProvider>
       <View style={{ flex: 1, backgroundColor: BG }}>
         <Stack
           screenOptions={{
@@ -75,6 +77,7 @@ function AppNavigator() {
           <Stack.Screen name="ride-history" options={{ title: "Ride history", headerRight: () => null }} />
         </Stack>
       </View>
+      </NotificationProvider>
     </ConvexAuthProvider>
   );
 }

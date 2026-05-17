@@ -52,6 +52,12 @@ export const generateProfilePhotoUploadUrl = mutation({
 export const completeStudentOnboarding = mutation({
   args: {
     profilePhotoStorageId: v.id("_storage"),
+    gender: v.union(
+      v.literal("female"),
+      v.literal("male"),
+      v.literal("nonBinary"),
+      v.literal("preferNotToSay"),
+    ),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -72,6 +78,7 @@ export const completeStudentOnboarding = mutation({
     if (existing) {
       await ctx.db.patch(existing._id, {
         profilePhotoStorageId: args.profilePhotoStorageId,
+        gender: args.gender,
         completedAt: Date.now(),
       });
       return existing._id;
@@ -81,8 +88,8 @@ export const completeStudentOnboarding = mutation({
       userId,
       universityEmail: user.email.toLowerCase(),
       profilePhotoStorageId: args.profilePhotoStorageId,
+      gender: args.gender,
       completedAt: Date.now(),
-      gender: 'female'
     });
   },
 });

@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "convex/react";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   ActivityIndicator,
@@ -176,7 +176,7 @@ type MessageBubbleProps = {
   isNew: boolean;
   isEmojiTrayOpen: boolean;
   onSwipeReply: (item: ChatMessage) => void;
-  onOpenTray: () => void;
+  onOpenTray: (id: Id<"rideMessages">) => void;
   onDismissTray: () => void;
   onReactionPress: (messageId: Id<"rideMessages">, emoji: string) => void;
 };
@@ -264,6 +264,23 @@ const MessageBubble = React.memo(function MessageBubble({
   // Swipe-to-reply pan responder
   const translateX = useRef(new Animated.Value(0)).current;
   const hasTriggered = useRef(false);
+  const lastTapRef = useRef(0);
+  const pulseScale = useRef(new Animated.Value(1)).current;
+
+  const handleBubbleTap = () => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      lastTapRef.current = 0;
+      onReactionPress(item._id, "❤️");
+      Animated.sequence([
+        Animated.spring(pulseScale, { toValue: 1.07, tension: 380, friction: 8, useNativeDriver: true }),
+        Animated.spring(pulseScale, { toValue: 1, tension: 280, friction: 12, useNativeDriver: true }),
+      ]).start();
+    } else {
+      lastTapRef.current = now;
+      if (isEmojiTrayOpen) onDismissTray();
+    }
+  };
 
   const panResponder = useRef(
     PanResponder.create({
@@ -325,8 +342,8 @@ const MessageBubble = React.memo(function MessageBubble({
 
       {/* Bubble: entrance + swipe transforms combined */}
       <Pressable
-        onLongPress={onOpenTray}
-        onPress={() => { if (isEmojiTrayOpen) onDismissTray(); }}
+        onLongPress={() => onOpenTray(item._id)}
+        onPress={handleBubbleTap}
         delayLongPress={350}>
         <Animated.View
           {...panResponder.panHandlers}
@@ -335,7 +352,7 @@ const MessageBubble = React.memo(function MessageBubble({
             isOwn && chatStyles.ownBubble,
             {
               opacity: entranceOpacity,
-              transform: [{ translateX }, { translateY: entranceSlide }],
+              transform: [{ translateX }, { translateY: entranceSlide }, { scale: pulseScale }],
             },
           ]}>
 
@@ -354,7 +371,7 @@ const MessageBubble = React.memo(function MessageBubble({
             <Text style={chatStyles.sender}>{item.senderName}</Text>
           )}
 
-          <Text selectable style={[chatStyles.messageText, isOwn && chatStyles.ownMessageText]}>
+          <Text selectable={isOwn} style={[chatStyles.messageText, isOwn && chatStyles.ownMessageText]}>
             {item.text}
           </Text>
         </Animated.View>
@@ -498,7 +515,7 @@ export function RideChatScreen() {
     }
   };
 
-  const handleToggleReaction = (messageId: Id<"rideMessages">, emoji: string) => {
+  const handleToggleReaction = useCallback((messageId: Id<"rideMessages">, emoji: string) => {
     if (!ridePostId) return;
     setActiveTrayId(null);
     void toggleReactionMutation({
@@ -506,11 +523,19 @@ export function RideChatScreen() {
       messageId,
       emoji,
     });
-  };
+  }, [ridePostId, toggleReactionMutation]);
 
-  const handleSwipeReply = (item: ChatMessage) => {
+  const handleSwipeReply = useCallback((item: ChatMessage) => {
     setReplyingTo({ id: item._id, senderName: item.senderName, text: item.text });
-  };
+  }, []);
+
+  const handleOpenTray = useCallback((id: Id<"rideMessages">) => {
+    setActiveTrayId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const handleDismissTray = useCallback(() => {
+    setActiveTrayId(null);
+  }, []);
 
   if (!ridePostId || onboarding === undefined || !onboarding?.isCompleted) {
     return (
@@ -531,6 +556,7 @@ export function RideChatScreen() {
         keyExtractor={(item) => item._id}
         style={chatStyles.list}
         contentContainerStyle={chatStyles.listContent}
+        keyboardShouldPersistTaps="handled"
         onScrollBeginDrag={() => setActiveTrayId(null)}
         onScroll={(e) => {
           const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
@@ -547,17 +573,17 @@ export function RideChatScreen() {
           ) : null
         }
         ListFooterComponent={<TypingIndicator names={activeTypingNames} />}
-        renderItem={({ item }) => (
+        renderItem={useCallback(({ item }: { item: ChatMessage }) => (
           <MessageBubble
             item={item}
             isNew={initialMessageIds.current !== null && !initialMessageIds.current.has(item._id)}
             isEmojiTrayOpen={activeTrayId === item._id}
             onSwipeReply={handleSwipeReply}
-            onOpenTray={() => setActiveTrayId(activeTrayId === item._id ? null : item._id)}
-            onDismissTray={() => setActiveTrayId(null)}
+            onOpenTray={handleOpenTray}
+            onDismissTray={handleDismissTray}
             onReactionPress={handleToggleReaction}
           />
-        )}
+        ), [activeTrayId, handleSwipeReply, handleOpenTray, handleDismissTray, handleToggleReaction])}
       />
 
       {replyingTo && (
@@ -575,8 +601,9 @@ export function RideChatScreen() {
           placeholder="Type a message..."
           placeholderTextColor="#6B7280"
           maxLength={500}
-          returnKeyType="send"
-          onSubmitEditing={() => void onSend()}
+          multiline
+          blurOnSubmit={false}
+          textAlignVertical="top"
         />
         <Pressable
           style={({ pressed }) => [
@@ -800,21 +827,24 @@ const chatStyles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "#4B5563",
     backgroundColor: "#2A2D33",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
   input: {
     flex: 1,
     minHeight: 42,
-    paddingVertical: 8,
+    maxHeight: 116,
+    paddingVertical: 10,
     fontSize: 15,
+    textAlignVertical: "top",
   },
   sendButton: {
-    minHeight: 42,
+    height: 42,
     paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: "#1E6CCC",
     alignItems: "center",
     justifyContent: "center",
+    marginBottom: 1,
   },
   sendButtonDisabled: {
     opacity: 0.4,

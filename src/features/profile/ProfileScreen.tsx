@@ -185,31 +185,63 @@ export function ProfileScreen() {
           <Text style={profileStyles.sectionHeading}>MY RATINGS</Text>
           {myRatingReviews === undefined || myRatingSummary === undefined ? (
             <Text style={styles.description}>Loading rating...</Text>
-          ) : myRatingSummary.totalRatings === 0 || reviewItems.length === 0 ? (
+          ) : myRatingSummary.totalRatings === 0 ? (
             <Text style={styles.description}>No ratings yet.</Text>
           ) : (
             <>
-              <View style={profileStyles.reviewCard}>
-                <View style={profileStyles.reviewSlot}>
-                  <Animated.View
-                    style={[
-                      profileStyles.reviewAnimated,
-                      { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
-                    ]}>
-                    <Text style={profileStyles.reviewQuote}>
-                      "{reviewItems[reviewIndex]?.note}"
+              {myRatingSummary.averageRating !== null && (
+                <View style={profileStyles.ratingScoreRow}>
+                  <Text style={profileStyles.ratingNumber}>{myRatingSummary.averageRating.toFixed(1)}</Text>
+                  <View style={profileStyles.ratingStarsCol}>
+                    <View style={profileStyles.starsRow}>
+                      {Array.from({ length: 5 }, (_, i) => {
+                        const filled = i < Math.round(myRatingSummary.averageRating!);
+                        return (
+                          <Text key={i} style={[profileStyles.starDisplay, filled && profileStyles.starDisplayFilled]}>
+                            {filled ? "★" : "☆"}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                    <Text style={profileStyles.ratingCountLabel}>
+                      {myRatingSummary.totalRatings} {myRatingSummary.totalRatings === 1 ? "rating" : "ratings"}
                     </Text>
-                    <Text style={profileStyles.reviewMeta}>
-                      {reviewItems[reviewIndex]?.reviewerName}
-                    </Text>
-                  </Animated.View>
+                  </View>
                 </View>
-              </View>
+              )}
+              {reviewItems.length > 0 && (
+                <View style={profileStyles.reviewCard}>
+                  <View style={profileStyles.reviewSlot}>
+                    <Animated.View
+                      style={[
+                        profileStyles.reviewAnimated,
+                        { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
+                      ]}>
+                      {reviewItems[reviewIndex]?.rating !== null && (
+                        <View style={profileStyles.reviewStarRow}>
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <Text key={i} style={[profileStyles.reviewStarGlyph, i < (reviewItems[reviewIndex]?.rating ?? 0) && profileStyles.reviewStarFilled]}>
+                              {i < (reviewItems[reviewIndex]?.rating ?? 0) ? "★" : "☆"}
+                            </Text>
+                          ))}
+                        </View>
+                      )}
+                      {reviewItems[reviewIndex]?.note ? (
+                        <Text style={profileStyles.reviewQuote}>
+                          "{reviewItems[reviewIndex]?.note}"
+                        </Text>
+                      ) : null}
+                      <Text style={profileStyles.reviewMeta}>
+                        {reviewItems[reviewIndex]?.reviewerName}
+                      </Text>
+                    </Animated.View>
+                  </View>
+                </View>
+              )}
               {reviewItems.length > 1 && (
                 <Pressable
                   style={({ pressed }) => [profileStyles.seeAllButton, pressed && styles.buttonPressed]}
                   onPress={() => setIsRatingsOpen(true)}>
-                  <Text style={profileStyles.seeAllText}>See all {reviewItems.length} reviews</Text>
                 </Pressable>
               )}
             </>
@@ -237,7 +269,18 @@ export function ProfileScreen() {
               <View style={profileStyles.reviewList}>
                 {reviewItems.map((review) => (
                   <View key={review.id} style={profileStyles.reviewCard}>
-                    <Text style={profileStyles.reviewQuote}>"{review.note}"</Text>
+                    {review.rating !== null && (
+                      <View style={profileStyles.reviewStarRow}>
+                        {Array.from({ length: 5 }, (_, i) => (
+                          <Text key={i} style={[profileStyles.reviewStarGlyph, i < (review.rating ?? 0) && profileStyles.reviewStarFilled]}>
+                            {i < (review.rating ?? 0) ? "★" : "☆"}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                    {review.note ? (
+                      <Text style={profileStyles.reviewQuote}>"{review.note}"</Text>
+                    ) : null}
                     <Text style={profileStyles.reviewMeta}>{review.reviewerName}</Text>
                   </View>
                 ))}
@@ -350,5 +393,51 @@ const profileStyles = StyleSheet.create({
   },
   modalScroll: {
     maxHeight: 420,
+  },
+  ratingScoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingVertical: 4,
+  },
+  ratingNumber: {
+    fontSize: 42,
+    fontFamily: "InterBold",
+    color: "#F8FAFC",
+    lineHeight: 48,
+    letterSpacing: -1,
+  },
+  ratingStarsCol: {
+    gap: 4,
+  },
+  starsRow: {
+    flexDirection: "row",
+    gap: 2,
+  },
+  starDisplay: {
+    fontSize: 20,
+    color: "#3A3F47",
+    lineHeight: 24,
+  },
+  starDisplayFilled: {
+    color: "#F59E0B",
+  },
+  ratingCountLabel: {
+    color: "#9CA3AF",
+    fontSize: 12,
+    fontFamily: "InterMedium",
+  },
+  reviewStarRow: {
+    flexDirection: "row",
+    gap: 2,
+    marginBottom: 2,
+  },
+  reviewStarGlyph: {
+    fontSize: 14,
+    color: "#3A3F47",
+    lineHeight: 18,
+  },
+  reviewStarFilled: {
+    color: "#F59E0B",
   },
 });

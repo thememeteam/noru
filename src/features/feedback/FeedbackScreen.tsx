@@ -11,6 +11,34 @@ import { useKeyboardAwareScroll } from "../../lib/useKeyboardAwareScroll";
 import { useAppStyles } from "../theme/AppTheme";
 
 const FEEDBACK_TAGS = ["Punctual", "Friendly", "Good music", "Smooth ride", "Easy to coordinate"];
+const STAR_COUNT = 5;
+
+function StarPicker({ value, onChange }: { value: number | null; onChange: (v: number) => void }) {
+  return (
+    <View style={feedbackStyles.starRow}>
+      {Array.from({ length: STAR_COUNT }, (_, i) => {
+        const starValue = i + 1;
+        const filled = value !== null && starValue <= value;
+        return (
+          <Pressable
+            key={starValue}
+            onPress={() => onChange(starValue)}
+            hitSlop={6}
+            style={({ pressed }) => [feedbackStyles.starButton, pressed && { opacity: 0.7 }]}>
+            <Text style={[feedbackStyles.starGlyph, filled && feedbackStyles.starFilled]}>
+              {filled ? "★" : "☆"}
+            </Text>
+          </Pressable>
+        );
+      })}
+      {value !== null && (
+        <Text style={feedbackStyles.starLabel}>
+          {value === 1 ? "Poor" : value === 2 ? "Fair" : value === 3 ? "Good" : value === 4 ? "Great" : "Excellent"}
+        </Text>
+      )}
+    </View>
+  );
+}
 
 export function FeedbackScreen() {
   const styles = useAppStyles();
@@ -22,6 +50,7 @@ export function FeedbackScreen() {
   );
   const submitRideUserFeedback = useMutation(api.rides.submitRideUserFeedback);
 
+  const [selectedStarByUser, setSelectedStarByUser] = useState<Record<string, number>>({});
   const [selectedTagsByUser, setSelectedTagsByUser] = useState<Record<string, string[]>>({});
   const [elseByUser, setElseByUser] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -40,9 +69,9 @@ export function FeedbackScreen() {
       return false;
     }
     return feedbackTargets.targets.every(
-      (target) => (selectedTagsByUser[String(target.userId)] ?? []).length > 0,
+      (target) => typeof selectedStarByUser[String(target.userId)] === "number",
     );
-  }, [feedbackTargets, isSubmitting, selectedTagsByUser]);
+  }, [feedbackTargets, isSubmitting, selectedStarByUser]);
 
   const onTagPress = (userId: string, label: string) => {
     const currentTags = selectedTagsByUser[userId] ?? [];
@@ -66,6 +95,7 @@ export function FeedbackScreen() {
           const selectedTags = selectedTagsByUser[key] ?? [];
           return {
             rateeUserId: target.userId,
+            rating: selectedStarByUser[key]!,
             whatWasGood: selectedTags.length > 0 ? selectedTags.join(", ") : undefined,
             anythingElse: elseByUser[key]?.trim() || undefined,
           };
@@ -106,12 +136,13 @@ export function FeedbackScreen() {
     return (
       <>
         <Text style={feedbackStyles.intro}>
-          Select at least one tag for each participant to submit.
+          Rate each participant to submit. Tags are optional.
         </Text>
 
         {feedbackTargets.targets.map((target) => {
           const key = String(target.userId);
           const selectedTags = selectedTagsByUser[key] ?? [];
+          const starValue = selectedStarByUser[key] ?? null;
 
           return (
             <View key={key} style={feedbackStyles.personCard}>
@@ -131,7 +162,13 @@ export function FeedbackScreen() {
                 </View>
               </View>
 
-              <Text style={feedbackStyles.questionLabel}>What went well?</Text>
+              <Text style={feedbackStyles.questionLabel}>Rating</Text>
+              <StarPicker
+                value={starValue}
+                onChange={(v) => setSelectedStarByUser((prev) => ({ ...prev, [key]: v }))}
+              />
+
+              <Text style={feedbackStyles.questionLabel}>What went well? (optional)</Text>
               <View style={styles.quickRow}>
                 {FEEDBACK_TAGS.map((tag) => {
                   const isActive = selectedTags.includes(tag);
@@ -224,6 +261,28 @@ const feedbackStyles = StyleSheet.create({
     color: "#AEB5C0",
     fontFamily: "InterBold",
     letterSpacing: 0.4,
+  },
+  starRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  starButton: {
+    padding: 2,
+  },
+  starGlyph: {
+    fontSize: 32,
+    color: "#3A3F47",
+    lineHeight: 38,
+  },
+  starFilled: {
+    color: "#F59E0B",
+  },
+  starLabel: {
+    color: "#C7CDD9",
+    fontSize: 13,
+    fontFamily: "InterMedium",
+    marginLeft: 6,
   },
   skipButton: {
     alignSelf: "center",

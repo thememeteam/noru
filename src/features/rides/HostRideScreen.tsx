@@ -9,6 +9,7 @@ import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
 import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_CAPACITIES, VEHICLE_LABELS, VEHICLE_OPTIONS, type VehicleType } from "./constants";
+import { PlacesAutocomplete } from "./PlacesAutocomplete";
 
 const TIME_PRESETS = [
   { label: "Now", mins: 0 },
@@ -113,8 +114,8 @@ export function HostRideScreen() {
 
   const maxCapacity = VEHICLE_CAPACITIES[vehicleType];
   const parsedPrice = Number(totalPrice);
-  const pricePerRider = capacity > 1 && Number.isFinite(parsedPrice) && parsedPrice > 0
-    ? Math.round(parsedPrice / capacity)
+  const pricePerRider = capacity >= 1 && Number.isFinite(parsedPrice) && parsedPrice > 0
+    ? Math.round(parsedPrice / (capacity + 1))
     : null;
 
   const isWomenOnlyEligible =
@@ -294,16 +295,14 @@ export function HostRideScreen() {
           <View
             style={hostStyles.fieldGroup}
             onLayout={(e) => { fieldY.current.startPoint = e.nativeEvent.layout.y; }}>
-            <Text style={hostStyles.fieldLabel}>From (pickup)</Text>
-            <TextInput
-              style={[styles.input, fieldTouched.startPoint && fieldErrors.startPoint ? hostStyles.inputError : null]}
+            <Text style={hostStyles.fieldLabel}>From</Text>
+            <PlacesAutocomplete
               value={startPoint}
               onChangeText={setStartPoint}
               onFocus={() => handleFieldFocus("startPoint")}
               onBlur={() => handleBlur("startPoint", startPoint)}
-              onTouchEnd={() => scrollToField("startPoint")}
               placeholder="Start point"
-              placeholderTextColor="#7B879C"
+              inputStyle={[styles.input, fieldTouched.startPoint && fieldErrors.startPoint ? hostStyles.inputError : null]}
             />
             {fieldTouched.startPoint && fieldErrors.startPoint
               ? <AnimatedError key={fieldErrors.startPoint} message={fieldErrors.startPoint} />
@@ -313,16 +312,14 @@ export function HostRideScreen() {
           <View
             style={hostStyles.fieldGroup}
             onLayout={(e) => { fieldY.current.endPoint = e.nativeEvent.layout.y; }}>
-            <Text style={hostStyles.fieldLabel}>To (destination)</Text>
-            <TextInput
-              style={[styles.input, fieldTouched.endPoint && fieldErrors.endPoint ? hostStyles.inputError : null]}
+            <Text style={hostStyles.fieldLabel}>To</Text>
+            <PlacesAutocomplete
               value={endPoint}
               onChangeText={setEndPoint}
               onFocus={() => handleFieldFocus("endPoint")}
               onBlur={() => handleBlur("endPoint", endPoint)}
-              onTouchEnd={() => scrollToField("endPoint")}
               placeholder="Destination"
-              placeholderTextColor="#7B879C"
+              inputStyle={[styles.input, fieldTouched.endPoint && fieldErrors.endPoint ? hostStyles.inputError : null]}
             />
             {fieldTouched.endPoint && fieldErrors.endPoint
               ? <AnimatedError key={fieldErrors.endPoint} message={fieldErrors.endPoint} />
@@ -352,7 +349,7 @@ export function HostRideScreen() {
 
           {maxCapacity > 1 && (
             <View style={hostStyles.fieldGroup}>
-              <Text style={hostStyles.fieldLabel}>Capacity</Text>
+              <Text style={hostStyles.fieldLabel}>Extra seats for riders</Text>
               <View style={styles.vehicleRow}>
                 {Array.from({ length: maxCapacity }, (_, i) => i + 1).map((n) => (
                   <Pressable
@@ -393,14 +390,15 @@ export function HostRideScreen() {
               value={rideStartAt ?? new Date()}
               mode="time"
               display="default"
-              onChange={onTimeChange}
+              onValueChange={onTimeChange}
+              onDismiss={() => setShowTimePicker(false)}
             />
           )}
 
           <View
             style={hostStyles.fieldGroup}
             onLayout={(e) => { fieldY.current.price = e.nativeEvent.layout.y; }}>
-            <Text style={hostStyles.fieldLabel}>Total fare (split between riders)</Text>
+            <Text style={hostStyles.fieldLabel}>Total trip fare</Text>
             <View style={[styles.input, hostStyles.fareRow, fieldTouched.price && fieldErrors.price ? hostStyles.inputError : null]}>
               <Text style={hostStyles.farePrefix}>₹</Text>
               <TextInput
@@ -418,7 +416,7 @@ export function HostRideScreen() {
             {fieldTouched.price && fieldErrors.price
               ? <AnimatedError key={fieldErrors.price} message={fieldErrors.price} />
               : pricePerRider !== null
-              ? <Text style={hostStyles.fieldHint}>₹{pricePerRider} per rider</Text>
+              ? <Text style={hostStyles.fieldHint}>≈₹{pricePerRider} / person when full</Text>
               : null}
           </View>
 
@@ -449,7 +447,7 @@ export function HostRideScreen() {
               </Pressable>
             </View>
             {!isWomenOnlyEligible && (
-              <Text style={hostStyles.optionHint}>Women only: available to female and non-binary riders</Text>
+              <Text style={hostStyles.optionHint}>Women only: available to female riders</Text>
             )}
             {isWomenOnlyEligible && !womenOnlyEligibleVehicle && (
               <Text style={hostStyles.optionHint}>Women only: not available for bikes</Text>
@@ -486,7 +484,7 @@ export function HostRideScreen() {
                 value={rideStartAt ?? new Date()}
                 mode="time"
                 display="spinner"
-                onChange={onTimeChange}
+                onValueChange={onTimeChange}
                 style={hostStyles.picker}
               />
             </View>
@@ -519,7 +517,7 @@ export function HostRideScreen() {
             <View style={hostStyles.confirmRow}>
               <Text style={hostStyles.confirmLabel}>Vehicle</Text>
               <Text style={hostStyles.confirmValue}>
-                {VEHICLE_LABELS[vehicleType]}{maxCapacity > 1 ? `, ${capacity} seat${capacity !== 1 ? "s" : ""}` : ""}
+                {VEHICLE_LABELS[vehicleType]}{maxCapacity > 1 ? `, ${capacity} extra seat${capacity !== 1 ? "s" : ""}` : ""}
               </Text>
             </View>
 
@@ -531,7 +529,7 @@ export function HostRideScreen() {
             <View style={hostStyles.confirmRow}>
               <Text style={hostStyles.confirmLabel}>Fare</Text>
               <Text style={hostStyles.confirmValue}>
-                ₹{parsedPrice} total{pricePerRider !== null ? ` · ₹${pricePerRider} per rider` : ""}
+                ₹{parsedPrice} total{pricePerRider !== null ? ` · ₹${pricePerRider} per person` : ""}
               </Text>
             </View>
 
@@ -583,6 +581,22 @@ const hostStyles = StyleSheet.create({
   },
   inputError: {
     borderColor: "#7F1D1D",
+  },
+  swapBtn: {
+    alignSelf: "center",
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#2A2D33",
+    borderWidth: 1,
+    borderColor: "#5B6371",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  swapIcon: {
+    color: "#9CA3AF",
+    fontSize: 16,
+    fontFamily: "InterMedium",
   },
   timePresetsRow: {
     flexDirection: "row",

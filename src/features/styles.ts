@@ -305,7 +305,7 @@ export const styles = StyleSheet.create({
   },
   signInMicrosoftButton: {
     minHeight: 56,
-    borderRadius: 16,
+    borderRadius: 12,
     backgroundColor: "#0967C8",
     flexDirection: "row",
     alignItems: "center",
@@ -355,9 +355,9 @@ export const styles = StyleSheet.create({
   },
   signInLegalText: {
     textAlign: "center",
-    color: "#9CA3AF",
-    fontSize: 14,
-    lineHeight: 21,
+    color: "#6B7280",
+    fontSize: 12,
+    lineHeight: 18,
     fontFamily: "InterMedium",
     paddingHorizontal: 18,
   },
