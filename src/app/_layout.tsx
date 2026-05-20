@@ -13,7 +13,7 @@ import { convex, convexAuthTokenStorage } from "../lib/convex";
 import { api } from "../../convex/_generated/api";
 import { ConvexProvider, useQuery } from "convex/react";
 
-const BG = "#2E2E2E";
+const BG = "#1A1A1A";
 
 const navTheme = {
   ...DarkTheme,
@@ -110,7 +110,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider style={{ backgroundColor: BG }}>
       <AppThemeProvider>
-        <StatusBar style="light" backgroundColor="#2E2E2E" translucent={false} />
+        <StatusBar style="light" backgroundColor="#1A1A1A" translucent={false} />
         <AppNavigator />
       </AppThemeProvider>
     </SafeAreaProvider>

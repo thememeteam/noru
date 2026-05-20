@@ -100,7 +100,7 @@ export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, place
       {showList && (
         <View style={acStyles.list}>
           {loading && (
-            <ActivityIndicator size="small" color="#60A5FA" style={{ paddingVertical: 10 }} />
+            <ActivityIndicator size="small" color="#5BA0F2" style={{ paddingVertical: 10 }} />
           )}
           {suggestions.map((item, i) => (
             <Pressable
@@ -141,36 +141,36 @@ const acStyles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1E6CCC",
+    backgroundColor: "#276EF1",
   },
   inputActionText: {
-    color: "#EFF6FF",
+    color: "#FFFFFF",
     fontSize: 12,
     fontFamily: "InterBold",
   },
   list: {
-    backgroundColor: "#32353B",
-    borderRadius: 10,
+    backgroundColor: "#262626",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#4B5563",
+    borderColor: "#383838",
     marginTop: 4,
     overflow: "hidden",
   },
   item: {
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    paddingVertical: 12,
   },
   itemBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "#4B5563",
+    borderBottomColor: "#383838",
   },
   itemMain: {
-    color: "#E5E7EB",
+    color: "#F0F0F0",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
   itemSub: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 12,
     fontFamily: "InterMedium",
     marginTop: 1,

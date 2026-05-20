@@ -10,6 +10,8 @@ export default defineSchema({
     profilePhotoStorageId: v.id("_storage"),
     homeAddress: v.optional(v.string()),
     homePlaceId: v.optional(v.string()),
+    workAddress: v.optional(v.string()),
+    workPlaceId: v.optional(v.string()),
     gender: v.optional(
       v.union(
         v.literal("female"),

@@ -201,7 +201,7 @@ const localStyles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     borderWidth: 2.5,
-    borderColor: "#60A5FA",
+    borderColor: "#5BA0F2",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -209,6 +209,6 @@ const localStyles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#1F3654",
+    backgroundColor: "#1A2C45",
   },
 });

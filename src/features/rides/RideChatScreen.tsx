@@ -539,7 +539,7 @@ export function RideChatScreen() {
   if (!ridePostId || onboarding === undefined || !onboarding?.isCompleted) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -622,7 +622,7 @@ export function RideChatScreen() {
 const chatStyles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: "#2E2E2E",
+    backgroundColor: "#1A1A1A",
   },
   list: {
     flex: 1,
@@ -650,7 +650,7 @@ const chatStyles = StyleSheet.create({
   // Bubbles
   bubble: {
     alignSelf: "flex-start",
-    backgroundColor: "#3A3F47",
+    backgroundColor: "#2A2A2A",
     borderRadius: 14,
     borderBottomLeftRadius: 4,
     paddingHorizontal: 12,
@@ -660,17 +660,17 @@ const chatStyles = StyleSheet.create({
   },
   ownBubble: {
     alignSelf: "flex-end",
-    backgroundColor: "#1E4D85",
+    backgroundColor: "#1D4B84",
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 4,
   },
   sender: {
-    color: "#94A3B8",
+    color: "#8A8A8A",
     fontSize: 11,
     fontFamily: "InterBold",
   },
   messageText: {
-    color: "#E5E7EB",
+    color: "#F0F0F0",
     fontSize: 15,
     lineHeight: 20,
     fontFamily: "InterMedium",
@@ -689,12 +689,12 @@ const chatStyles = StyleSheet.create({
     gap: 2,
   },
   replyQuoteSender: {
-    color: "#60A5FA",
+    color: "#5BA0F2",
     fontSize: 11,
     fontFamily: "InterBold",
   },
   replyQuoteText: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 12,
     fontFamily: "InterMedium",
   },
@@ -702,16 +702,16 @@ const chatStyles = StyleSheet.create({
   // Emoji tray (animated reveal)
   emojiTray: {
     flexDirection: "row",
-    backgroundColor: "#32353B",
+    backgroundColor: "#262626",
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: "#5B6371",
+    borderColor: "#404040",
     paddingHorizontal: 8,
     paddingVertical: 6,
     gap: 2,
-    shadowColor: "#0F172A",
+    shadowColor: "#000000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.22,
+    shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 8,
   },
@@ -721,7 +721,7 @@ const chatStyles = StyleSheet.create({
     borderRadius: 12,
   },
   emojiBtnActive: {
-    backgroundColor: "#1F3654",
+    backgroundColor: "#1A2C45",
   },
   emojiBtnText: {
     fontSize: 22,
@@ -735,19 +735,19 @@ const chatStyles = StyleSheet.create({
     marginTop: 2,
   },
   reactionPill: {
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#1E1E1E",
     borderWidth: 1,
-    borderColor: "#5B6371",
+    borderColor: "#404040",
     borderRadius: 999,
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
   reactionPillActive: {
-    backgroundColor: "#1F3654",
-    borderColor: "#60A5FA",
+    backgroundColor: "#1A2C45",
+    borderColor: "#5BA0F2",
   },
   reactionPillText: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 12,
     fontFamily: "InterBold",
   },
@@ -765,7 +765,7 @@ const chatStyles = StyleSheet.create({
     paddingBottom: 8,
   },
   typingText: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 13,
     fontFamily: "InterMedium",
   },
@@ -778,7 +778,7 @@ const chatStyles = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 999,
-    backgroundColor: "#9CA3AF",
+    backgroundColor: "#8A8A8A",
   },
 
   // Reply strip (animated entrance)
@@ -788,9 +788,9 @@ const chatStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 10,
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#1E1E1E",
     borderTopWidth: 1,
-    borderTopColor: "#4B5563",
+    borderTopColor: "#383838",
     gap: 10,
   },
   replyStripContent: {
@@ -798,12 +798,12 @@ const chatStyles = StyleSheet.create({
     gap: 2,
   },
   replyStripSender: {
-    color: "#60A5FA",
+    color: "#5BA0F2",
     fontSize: 13,
     fontFamily: "InterBold",
   },
   replyStripText: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 13,
     fontFamily: "InterMedium",
   },
@@ -811,7 +811,7 @@ const chatStyles = StyleSheet.create({
     padding: 4,
   },
   replyStripCloseText: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 18,
     fontFamily: "InterBold",
   },
@@ -823,8 +823,8 @@ const chatStyles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: "#4B5563",
-    backgroundColor: "#2A2D33",
+    borderTopColor: "#383838",
+    backgroundColor: "#1E1E1E",
     alignItems: "flex-end",
   },
   input: {
@@ -838,8 +838,8 @@ const chatStyles = StyleSheet.create({
   sendButton: {
     height: 42,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#1E6CCC",
+    borderRadius: 12,
+    backgroundColor: "#276EF1",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 1,

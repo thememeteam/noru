@@ -12,7 +12,9 @@
       "Skill(impeccable:impeccable)",
       "Bash(npx expo *)",
       "Bash(Remove-Item *)",
-      "Bash(findstr /i \"map\\\\|expo-map\")"
+      "Bash(findstr /i \"map\\\\|expo-map\")",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Skill(impeccable)"
     ]
   }
 }

@@ -11,6 +11,12 @@ import { useAppStyles } from "../theme/AppTheme";
 import { VEHICLE_LABELS } from "./constants";
 import { RouteMap } from "./RouteMap";
 
+function extractRegistrationNumber(name: string, email?: string | null): string | null {
+  const bracketMatch = name.match(/\[([^\]]+)\]/);
+  if (bracketMatch?.[1]) return bracketMatch[1].trim();
+  return email?.split("@")[0]?.trim() || null;
+}
+
 function formatRideTime(rideStartAt?: number | null): string | null {
   if (!rideStartAt || !Number.isFinite(rideStartAt)) return null;
   const date = new Date(rideStartAt);
@@ -54,20 +60,6 @@ export function WaitingRoomScreen() {
     photoUrl: string | null;
     registrationNumber: string | null;
   } | null>(null);
-
-  const extractRegistrationNumber = (name: string, email?: string | null) => {
-    const bracketMatch = name.match(/\[([^\]]+)\]/);
-    if (bracketMatch && bracketMatch[1]) {
-      return bracketMatch[1].trim();
-    }
-
-    if (email) {
-      const emailHandle = email.split("@")[0]?.trim();
-      return emailHandle || null;
-    }
-
-    return null;
-  };
 
   useEffect(() => {
     if (!ridePostId || (onboarding && !onboarding.isCompleted)) {
@@ -180,7 +172,7 @@ export function WaitingRoomScreen() {
   if (!ridePostId || onboarding === undefined || !onboarding?.isCompleted) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -555,7 +547,7 @@ export function WaitingRoomScreen() {
         <ScrollView contentContainerStyle={[styles.boardContent, { paddingHorizontal: 16 }]}>
           {hostedRideData === undefined || joinedRideData === undefined ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="small" color="#1E6CCC" />
+              <ActivityIndicator size="small" color="#276EF1" />
             </View>
           ) : hostedRideData ? (
             renderHostView()
@@ -599,10 +591,10 @@ export function WaitingRoomScreen() {
 const waitingStyles = StyleSheet.create({
   summaryCard: {
     borderWidth: 1,
-    borderColor: "#4B5563",
-    backgroundColor: "#32353B",
-    borderRadius: 14,
-    padding: 16,
+    borderColor: "#383838",
+    backgroundColor: "#262626",
+    borderRadius: 18,
+    padding: 18,
     gap: 12,
   },
   routeBlock: {
@@ -620,17 +612,17 @@ const waitingStyles = StyleSheet.create({
     borderWidth: 2,
   },
   routeDotOrigin: {
-    borderColor: "#60A5FA",
-    backgroundColor: "#1e3a5f",
+    borderColor: "#5BA0F2",
+    backgroundColor: "#1A2C45",
   },
   routeDotDest: {
     borderColor: "#34D399",
-    backgroundColor: "#052e16",
+    backgroundColor: "#0A2818",
   },
   routeConnector: {
     width: 2,
     height: 10,
-    backgroundColor: "#4B5563",
+    backgroundColor: "#383838",
     marginLeft: 4,
     marginVertical: 3,
   },
@@ -640,18 +632,18 @@ const waitingStyles = StyleSheet.create({
   },
   routeStopLabel: {
     fontSize: 11,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   routeStopName: {
     fontSize: 16,
-    color: "#F3F4F6",
+    color: "#FFFFFF",
     fontFamily: "InterBold",
   },
   metaText: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -664,7 +656,7 @@ const waitingStyles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    backgroundColor: "#1F3654",
+    backgroundColor: "#1A2C45",
   },
   pendingPillText: {
     color: "#93C5FD",
@@ -695,18 +687,19 @@ const waitingStyles = StyleSheet.create({
     fontFamily: "InterBold",
   },
   sectionHeading: {
-    color: "#9CA3AF",
-    fontSize: 14,
-    letterSpacing: 0.6,
+    color: "#8A8A8A",
+    fontSize: 12,
+    letterSpacing: 0.8,
     fontFamily: "InterBold",
     marginTop: 8,
+    textTransform: "uppercase",
   },
   participantCard: {
     borderWidth: 1,
-    borderColor: "#4B5563",
-    backgroundColor: "#2A2D33",
-    borderRadius: 12,
-    padding: 12,
+    borderColor: "#383838",
+    backgroundColor: "#222222",
+    borderRadius: 16,
+    padding: 14,
     gap: 10,
   },
   participantTextWrap: {
@@ -722,14 +715,14 @@ const waitingStyles = StyleSheet.create({
     minWidth: 80,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#5B6371",
-    backgroundColor: "#3A3F47",
+    borderColor: "#444444",
+    backgroundColor: "#2A2A2A",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
   },
   actionButtonText: {
-    color: "#E5E7EB",
+    color: "#E0E0E0",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -737,7 +730,7 @@ const waitingStyles = StyleSheet.create({
     minHeight: 44,
     minWidth: 80,
     borderRadius: 12,
-    backgroundColor: "#1E6CCC",
+    backgroundColor: "#276EF1",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 14,
@@ -760,8 +753,8 @@ const waitingStyles = StyleSheet.create({
     justifyContent: "center",
   },
   startRideButton: {
-    borderColor: "#1E6CCC",
-    backgroundColor: "#1E6CCC",
+    borderColor: "#276EF1",
+    backgroundColor: "#276EF1",
   },
   actionFooter: {
     gap: 12,
@@ -782,8 +775,8 @@ const waitingStyles = StyleSheet.create({
     fontFamily: "InterBold",
   },
   endRideButton: {
-    borderColor: "#5B6371",
-    backgroundColor: "#3A3F47",
+    borderColor: "#444444",
+    backgroundColor: "#2A2A2A",
   },
   endRideButtonText: {
     color: "#F8FAFC",

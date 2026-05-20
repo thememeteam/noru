@@ -82,7 +82,7 @@ export function RouteMap({ startPoint, endPoint }: Props) {
   if (status === "loading") {
     return (
       <View style={[mapStyles.container, mapStyles.loadingBox]}>
-        <ActivityIndicator size="small" color="#60A5FA" />
+        <ActivityIndicator size="small" color="#5BA0F2" />
       </View>
     );
   }
@@ -99,17 +99,17 @@ export function RouteMap({ startPoint, endPoint }: Props) {
 
 const mapStyles = StyleSheet.create({
   container: {
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#4B5563",
+    borderColor: "#383838",
   },
   map: {
     height: 180,
   },
   loadingBox: {
     height: 180,
-    backgroundColor: "#1d2c4d",
+    backgroundColor: "#181E2E",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -117,15 +117,15 @@ const mapStyles = StyleSheet.create({
     position: "absolute",
     bottom: 10,
     right: 10,
-    backgroundColor: "rgba(15, 23, 42, 0.72)",
+    backgroundColor: "rgba(0, 0, 0, 0.72)",
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderWidth: 1,
-    borderColor: "#4B5563",
+    borderColor: "#383838",
   },
   badgeText: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 12,
     fontFamily: "InterBold",
   },

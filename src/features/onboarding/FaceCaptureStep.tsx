@@ -91,7 +91,7 @@ export function FaceCaptureStep() {
   };
 
   if (onboarding === undefined) {
-    return <ActivityIndicator size="large" color="#1E6CCC" />;
+    return <ActivityIndicator size="large" color="#276EF1" />;
   }
 
   if (isCompleted) {
@@ -205,7 +205,7 @@ const onboardingStyles = StyleSheet.create({
   },
   stepLabel: {
     fontSize: 13,
-    color: "#AEB5C0",
+    color: "#8A8A8A",
     fontFamily: "InterBold",
     letterSpacing: 0.3,
   },
@@ -217,20 +217,20 @@ const onboardingStyles = StyleSheet.create({
   genderChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#5B6371",
-    backgroundColor: "#2A2D33",
+    borderColor: "#404040",
+    backgroundColor: "#1E1E1E",
     paddingHorizontal: 16,
     paddingVertical: 9,
   },
   genderChipActive: {
-    backgroundColor: "#1F3654",
-    borderColor: "#60A5FA",
+    backgroundColor: "#1A2C45",
+    borderColor: "#5BA0F2",
   },
   genderChipPressed: {
     opacity: 0.88,
   },
   genderChipText: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -240,19 +240,19 @@ const onboardingStyles = StyleSheet.create({
   },
   openCameraButton: {
     minHeight: 46,
-    borderRadius: 12,
-    backgroundColor: "#1E6CCC",
+    borderRadius: 14,
+    backgroundColor: "#276EF1",
     alignItems: "center",
     justifyContent: "center",
   },
   openCameraButtonText: {
-    color: "#EAF3FF",
+    color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "InterBold",
   },
   submitHint: {
     textAlign: "center",
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 13,
     fontFamily: "InterMedium",
   },
@@ -262,7 +262,7 @@ const onboardingStyles = StyleSheet.create({
     marginTop: 4,
   },
   signOutLinkText: {
-    color: "#6B7280",
+    color: "#606060",
     fontSize: 13,
     fontFamily: "InterMedium",
   },

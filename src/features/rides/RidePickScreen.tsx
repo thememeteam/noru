@@ -249,7 +249,7 @@ export function RidePickScreen() {
           if (postsLoading) {
             return (
               <View style={ridePickStyles.listEmptyState}>
-                <ActivityIndicator size="small" color="#60A5FA" />
+                <ActivityIndicator size="small" color="#5BA0F2" />
               </View>
             );
           }
@@ -402,7 +402,7 @@ export function RidePickScreen() {
 
 const ridePickStyles = StyleSheet.create({
   screen: {
-    backgroundColor: "#2E2E2E",
+    backgroundColor: "#1A1A1A",
   },
   boardContent: {
     paddingTop: 20,
@@ -421,12 +421,12 @@ const ridePickStyles = StyleSheet.create({
     flex: 1,
   },
   greetingSmall: {
-    color: "#C7CDD9",
+    color: "#8A8A8A",
     fontSize: 15,
     fontFamily: "InterMedium",
   },
   greetingName: {
-    color: "#F3F4F6",
+    color: "#FFFFFF",
     fontSize: 38,
     lineHeight: 42,
     fontFamily: "InterBold",
@@ -436,15 +436,15 @@ const ridePickStyles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "#60A5FA",
+    borderColor: "#5BA0F2",
   },
   profileAvatarFallback: {
     width: 36,
     height: 36,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: "#60A5FA",
-    backgroundColor: "#1F3654",
+    borderColor: "#5BA0F2",
+    backgroundColor: "#1A2C45",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -457,20 +457,20 @@ const ridePickStyles = StyleSheet.create({
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
-    borderRadius: 14,
-    backgroundColor: "#1764C6",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderRadius: 18,
+    backgroundColor: "#1D5CC8",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     gap: 6,
     marginBottom: 14,
   },
   heroTitle: {
-    color: "#EFF6FF",
+    color: "#FFFFFF",
     fontSize: 23,
     fontFamily: "InterBold",
   },
   heroSubtitle: {
-    color: "#DCEBFF",
+    color: "rgba(255,255,255,0.72)",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -488,11 +488,11 @@ const ridePickStyles = StyleSheet.create({
     borderWidth: 1,
   },
   heroActionPrimary: {
-    backgroundColor: "#E8EFF7",
-    borderColor: "#E8EFF7",
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderColor: "rgba(255,255,255,0.25)",
   },
   heroActionPrimaryText: {
-    color: "#1F67BC",
+    color: "#FFFFFF",
     fontSize: 15,
     fontFamily: "InterBold",
   },
@@ -503,10 +503,11 @@ const ridePickStyles = StyleSheet.create({
     gap: 6,
   },
   sectionTitle: {
-    color: "#AEB5C0",
-    fontSize: 14,
-    letterSpacing: 0.6,
+    color: "#8A8A8A",
+    fontSize: 12,
+    letterSpacing: 0.8,
     fontFamily: "InterBold",
+    textTransform: "uppercase",
   },
   filterRow: {
     flexDirection: "row",
@@ -516,17 +517,17 @@ const ridePickStyles = StyleSheet.create({
   filterChip: {
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#5B6371",
-    backgroundColor: "#2A2D33",
+    borderColor: "#404040",
+    backgroundColor: "#1E1E1E",
     paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingVertical: 8,
   },
   filterChipActive: {
-    backgroundColor: "#1F3654",
-    borderColor: "#60A5FA",
+    backgroundColor: "#1A2C45",
+    borderColor: "#5BA0F2",
   },
   filterChipText: {
-    color: "#D1D5DB",
+    color: "#B8B8B8",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -534,7 +535,7 @@ const ridePickStyles = StyleSheet.create({
     color: "#DBEAFE",
   },
   description: {
-    color: "#D1D5DB",
+    color: "#B8B8B8",
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
@@ -543,11 +544,11 @@ const ridePickStyles = StyleSheet.create({
     width: "100%",
     maxWidth: 760,
     alignSelf: "center",
-    backgroundColor: "#2A2D33",
-    borderColor: "#4B5563",
-    borderRadius: 14,
+    backgroundColor: "#222222",
+    borderColor: "#383838",
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 12,
+    padding: 14,
     gap: 7,
   },
   rideHeaderRow: {
@@ -572,23 +573,23 @@ const ridePickStyles = StyleSheet.create({
     flexShrink: 0,
   },
   routeDotOriginCompact: {
-    borderColor: "#60A5FA",
-    backgroundColor: "#1e3a5f",
+    borderColor: "#5BA0F2",
+    backgroundColor: "#1A2C45",
   },
   routeDotDestCompact: {
     borderColor: "#34D399",
-    backgroundColor: "#052e16",
+    backgroundColor: "#0A2818",
   },
   routeConnectorCompact: {
     width: 1.5,
     height: 8,
-    backgroundColor: "#4B5563",
+    backgroundColor: "#383838",
     marginLeft: 3.25,
     marginVertical: 2,
   },
   routeStopTextCompact: {
     flex: 1,
-    color: "#F3F4F6",
+    color: "#FFFFFF",
     fontSize: 15,
     fontFamily: "InterBold",
   },
@@ -599,19 +600,19 @@ const ridePickStyles = StyleSheet.create({
     gap: 10,
   },
   rideRoute: {
-    color: "#F3F4F6",
+    color: "#FFFFFF",
     fontSize: 17,
     lineHeight: 22,
     fontFamily: "InterBold",
     flex: 1,
   },
   rideMeta: {
-    color: "#C7CDD9",
+    color: "#8A8A8A",
     fontSize: 13,
     fontFamily: "InterMedium",
   },
   riderMeta: {
-    color: "#C7CDD9",
+    color: "#8A8A8A",
     fontSize: 13,
     fontFamily: "InterMedium",
     flexShrink: 1,
@@ -634,15 +635,15 @@ const ridePickStyles = StyleSheet.create({
   },
   requestButton: {
     minHeight: 42,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
-    backgroundColor: "#1E6CCC",
+    paddingHorizontal: 14,
+    backgroundColor: "#276EF1",
     minWidth: 92,
   },
   requestButtonText: {
-    color: "#EAF3FF",
+    color: "#FFFFFF",
     fontSize: 15,
     fontFamily: "InterBold",
   },
@@ -660,12 +661,12 @@ const ridePickStyles = StyleSheet.create({
     gap: 6,
   },
   emptyStateHeading: {
-    color: "#D1D5DB",
+    color: "#C0C0C0",
     fontSize: 16,
     fontFamily: "InterMedium",
   },
   emptyStateBody: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
@@ -676,14 +677,14 @@ const ridePickStyles = StyleSheet.create({
   },
   overlayStarGlyph: {
     fontSize: 14,
-    color: "#3A3F47",
+    color: "#404040",
     lineHeight: 18,
   },
   overlayStarFilled: {
     color: "#F59E0B",
   },
   overlayRatingText: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 12,
     fontFamily: "InterMedium",
     marginLeft: 2,

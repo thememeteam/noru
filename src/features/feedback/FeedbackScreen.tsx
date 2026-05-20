@@ -119,7 +119,7 @@ export function FeedbackScreen() {
     if (feedbackTargets === undefined) {
       return (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="large" color="#1E6CCC" />
+          <ActivityIndicator size="large" color="#276EF1" />
         </View>
       );
     }
@@ -237,28 +237,28 @@ export function FeedbackScreen() {
 
 const feedbackStyles = StyleSheet.create({
   intro: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 14,
     fontFamily: "InterMedium",
     lineHeight: 20,
   },
   personCard: {
     borderWidth: 1,
-    borderColor: "#4B5563",
-    backgroundColor: "#2A2D33",
-    borderRadius: 14,
-    padding: 12,
+    borderColor: "#383838",
+    backgroundColor: "#222222",
+    borderRadius: 16,
+    padding: 14,
     gap: 10,
   },
   questionLabel: {
     fontSize: 13,
-    color: "#AEB5C0",
+    color: "#8A8A8A",
     fontFamily: "InterBold",
     letterSpacing: 0.4,
   },
   noteLabel: {
     fontSize: 13,
-    color: "#AEB5C0",
+    color: "#8A8A8A",
     fontFamily: "InterBold",
     letterSpacing: 0.4,
   },
@@ -272,14 +272,14 @@ const feedbackStyles = StyleSheet.create({
   },
   starGlyph: {
     fontSize: 32,
-    color: "#3A3F47",
+    color: "#404040",
     lineHeight: 38,
   },
   starFilled: {
     color: "#F59E0B",
   },
   starLabel: {
-    color: "#C7CDD9",
+    color: "#B8B8B8",
     fontSize: 13,
     fontFamily: "InterMedium",
     marginLeft: 6,
@@ -290,7 +290,7 @@ const feedbackStyles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   skipButtonText: {
-    color: "#6B7280",
+    color: "#606060",
     fontSize: 14,
     fontFamily: "InterMedium",
   },

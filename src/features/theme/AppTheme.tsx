@@ -20,10 +20,10 @@ export function AppThemeProvider({ children }: PropsWithChildren) {
     return {
       styles: darkStyles,
       colors: {
-        headerTint: "#F3F4F6",
-        headerBackground: "#2E2E2E",
-        contentBackground: "#2E2E2E",
-        activityIndicator: "#1E6CCC",
+        headerTint: "#FFFFFF",
+        headerBackground: "#1A1A1A",
+        contentBackground: "#1A1A1A",
+        activityIndicator: "#276EF1",
       },
     };
   }, []);

@@ -50,6 +50,9 @@ export function ProfileScreen() {
     onboardingState?.isAuthenticated ? {} : "skip",
   );
   const updateHomeAddress = useMutation(api.onboarding.updateHomeAddress);
+  const updateWorkAddress = useMutation(api.onboarding.updateWorkAddress);
+  const clearHomeAddress = useMutation(api.onboarding.clearHomeAddress);
+  const clearWorkAddress = useMutation(api.onboarding.clearWorkAddress);
 
   const pastRides = useMemo(() => {
     if (!rideHistory) {
@@ -66,8 +69,10 @@ export function ProfileScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const reviewLengthRef = useRef(0);
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
-  const [homeAddress, setHomeAddress] = useState("");
-  const [isSavingHome, setIsSavingHome] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<"home" | "work" | null>(null);
+  const [homeAddressInput, setHomeAddressInput] = useState("");
+  const [workAddressInput, setWorkAddressInput] = useState("");
+  const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   const scrollRef = useRef<ScrollView>(null);
@@ -80,12 +85,6 @@ export function ProfileScreen() {
       setReviewIndex(0);
     }
   }, [reviewItems]);
-
-  useEffect(() => {
-    if (onboardingState?.homeAddress !== undefined && onboardingState?.homeAddress !== null) {
-      setHomeAddress(onboardingState.homeAddress);
-    }
-  }, [onboardingState?.homeAddress]);
 
   useEffect(() => {
     const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
@@ -128,24 +127,44 @@ export function ProfileScreen() {
     router.replace("/");
   };
 
-  const onSaveHome = async () => {
-    if (!homeAddress.trim() || isSavingHome) {
-      return;
+  const startEditing = (field: "home" | "work") => {
+    if (field === "home") {
+      setHomeAddressInput(onboardingState?.homeAddress ?? "");
+    } else {
+      setWorkAddressInput((onboardingState as any)?.workAddress ?? "");
     }
+    setEditingAddress(field);
+  };
 
+  const onSaveAddress = async (field: "home" | "work") => {
+    if (isSavingAddress) return;
+    const input = field === "home" ? homeAddressInput : workAddressInput;
+    if (!input.trim()) return;
     try {
-      setIsSavingHome(true);
-      await updateHomeAddress({
-        homeAddress: homeAddress.trim(),
-      });
-      Alert.alert("Saved", "Home address updated.");
+      setIsSavingAddress(true);
+      if (field === "home") {
+        await updateHomeAddress({ homeAddress: input.trim() });
+      } else {
+        await updateWorkAddress({ workAddress: input.trim() });
+      }
+      setEditingAddress(null);
     } catch (error) {
-      Alert.alert(
-        "Could not save",
-        error instanceof Error ? error.message : "Please try again.",
-      );
+      Alert.alert("Could not save", error instanceof Error ? error.message : "Please try again.");
     } finally {
-      setIsSavingHome(false);
+      setIsSavingAddress(false);
+    }
+  };
+
+  const onClearAddress = async (field: "home" | "work") => {
+    if (editingAddress === field) setEditingAddress(null);
+    try {
+      if (field === "home") {
+        await clearHomeAddress({});
+      } else {
+        await clearWorkAddress({});
+      }
+    } catch (error) {
+      Alert.alert("Could not remove", error instanceof Error ? error.message : "Please try again.");
     }
   };
 
@@ -165,7 +184,7 @@ export function ProfileScreen() {
   if (onboardingState === undefined) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -217,24 +236,117 @@ export function ProfileScreen() {
             </View>
           </View>
 
-          <View
-            onLayout={(e) => { fieldY.current.homeAddress = e.nativeEvent.layout.y; }}>
-            <Text style={profileStyles.sectionSubheading}>HOME ADDRESS</Text>
-            <PlacesAutocomplete
-              value={homeAddress}
-              onChangeText={setHomeAddress}
-              onFocus={() => handleFieldFocus("homeAddress")}
-              placeholder="Set your home address"
-              inputStyle={styles.input}
-            />
-            <View style={profileStyles.homeSaveRow}>
-              <AppButton
-                title={isSavingHome ? "Saving..." : "Save home address"}
-                onPress={() => void onSaveHome()}
-                disabled={!homeAddress.trim() || isSavingHome}
-                variant="secondary"
-              />
-            </View>
+          <Text style={profileStyles.sectionHeading}>SAVED PLACES</Text>
+          <View style={profileStyles.addressCard}>
+            <Pressable
+              style={({ pressed }) => [profileStyles.addressRow, pressed && editingAddress !== "home" && { opacity: 0.88 }]}
+              onPress={() => startEditing("home")}>
+              <View style={profileStyles.addressIconWrap}>
+                <Text style={profileStyles.addressIcon}>🏠</Text>
+              </View>
+              <View style={profileStyles.addressTextCol}>
+                <Text style={profileStyles.addressLabel}>Home</Text>
+                <Text
+                  style={[profileStyles.addressValue, !onboardingState.homeAddress && profileStyles.addressEmpty]}
+                  numberOfLines={1}>
+                  {onboardingState.homeAddress ?? "Not set"}
+                </Text>
+              </View>
+              {onboardingState.homeAddress ? (
+                <Pressable
+                  style={({ pressed }) => [profileStyles.clearAddressBtn, pressed && { opacity: 0.88 }]}
+                  onPress={() => void onClearAddress("home")}
+                  hitSlop={8}>
+                  <Text style={profileStyles.clearAddressBtnText}>×</Text>
+                </Pressable>
+              ) : (
+                <Text style={profileStyles.addressAddHint}>Add</Text>
+              )}
+            </Pressable>
+            {editingAddress === "home" && (
+              <View
+                style={profileStyles.inlineEditor}
+                onLayout={(e) => { fieldY.current.homeAddress = e.nativeEvent.layout.y; }}>
+                <PlacesAutocomplete
+                  value={homeAddressInput}
+                  onChangeText={setHomeAddressInput}
+                  onFocus={() => handleFieldFocus("homeAddress")}
+                  placeholder="Enter home address"
+                  inputStyle={styles.input}
+                />
+                <View style={profileStyles.inlineEditorActions}>
+                  <View style={{ flex: 1 }}>
+                    <AppButton
+                      title={isSavingAddress ? "Saving..." : "Save"}
+                      onPress={() => void onSaveAddress("home")}
+                      disabled={!homeAddressInput.trim() || isSavingAddress}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppButton
+                      title="Cancel"
+                      onPress={() => setEditingAddress(null)}
+                      variant="secondary"
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
+            <View style={profileStyles.addressDivider} />
+            <Pressable
+              style={({ pressed }) => [profileStyles.addressRow, pressed && editingAddress !== "work" && { opacity: 0.88 }]}
+              onPress={() => startEditing("work")}>
+              <View style={profileStyles.addressIconWrap}>
+                <Text style={profileStyles.addressIcon}>💼</Text>
+              </View>
+              <View style={profileStyles.addressTextCol}>
+                <Text style={profileStyles.addressLabel}>Work</Text>
+                <Text
+                  style={[profileStyles.addressValue, !(onboardingState as any).workAddress && profileStyles.addressEmpty]}
+                  numberOfLines={1}>
+                  {(onboardingState as any).workAddress ?? "Not set"}
+                </Text>
+              </View>
+              {(onboardingState as any).workAddress ? (
+                <Pressable
+                  style={({ pressed }) => [profileStyles.clearAddressBtn, pressed && { opacity: 0.88 }]}
+                  onPress={() => void onClearAddress("work")}
+                  hitSlop={8}>
+                  <Text style={profileStyles.clearAddressBtnText}>×</Text>
+                </Pressable>
+              ) : (
+                <Text style={profileStyles.addressAddHint}>Add</Text>
+              )}
+            </Pressable>
+            {editingAddress === "work" && (
+              <View
+                style={profileStyles.inlineEditor}
+                onLayout={(e) => { fieldY.current.workAddress = e.nativeEvent.layout.y; }}>
+                <PlacesAutocomplete
+                  value={workAddressInput}
+                  onChangeText={setWorkAddressInput}
+                  onFocus={() => handleFieldFocus("workAddress")}
+                  placeholder="Enter work address"
+                  inputStyle={styles.input}
+                />
+                <View style={profileStyles.inlineEditorActions}>
+                  <View style={{ flex: 1 }}>
+                    <AppButton
+                      title={isSavingAddress ? "Saving..." : "Save"}
+                      onPress={() => void onSaveAddress("work")}
+                      disabled={!workAddressInput.trim() || isSavingAddress}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <AppButton
+                      title="Cancel"
+                      onPress={() => setEditingAddress(null)}
+                      variant="secondary"
+                    />
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
 
           <Text style={profileStyles.sectionHeading}>RIDE HISTORY</Text>
@@ -405,9 +517,9 @@ const profileStyles = StyleSheet.create({
   },
   verifiedBadge: {
     borderRadius: 999,
-    backgroundColor: "#1F3654",
+    backgroundColor: "#1A2C45",
     borderWidth: 1,
-    borderColor: "#1E6CCC",
+    borderColor: "#276EF1",
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
@@ -418,10 +530,11 @@ const profileStyles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   sectionHeading: {
-    color: "#AEB5C0",
-    fontSize: 13,
-    letterSpacing: 0.6,
+    color: "#8A8A8A",
+    fontSize: 12,
+    letterSpacing: 0.8,
     fontFamily: "InterBold",
+    textTransform: "uppercase",
   },
   historyRow: {
     flexDirection: "row",
@@ -460,16 +573,16 @@ const profileStyles = StyleSheet.create({
     paddingVertical: 4,
   },
   seeAllText: {
-    color: "#60A5FA",
+    color: "#5BA0F2",
     fontSize: 14,
     fontFamily: "InterMedium",
   },
   reviewCard: {
     borderWidth: 1,
-    borderColor: "#1F3654",
-    backgroundColor: "#2A2D33",
-    borderRadius: 12,
-    padding: 12,
+    borderColor: "#383838",
+    backgroundColor: "#1E1E1E",
+    borderRadius: 14,
+    padding: 14,
     gap: 6,
   },
   reviewSlot: {
@@ -484,12 +597,12 @@ const profileStyles = StyleSheet.create({
     gap: 12,
   },
   reviewQuote: {
-    color: "#F3F4F6",
+    color: "#F0F0F0",
     fontSize: 15,
     fontFamily: "InterMedium",
   },
   reviewMeta: {
-    color: "#AEB5C0",
+    color: "#8A8A8A",
     fontSize: 12,
     fontFamily: "InterMedium",
   },
@@ -505,7 +618,7 @@ const profileStyles = StyleSheet.create({
   ratingNumber: {
     fontSize: 42,
     fontFamily: "InterBold",
-    color: "#F8FAFC",
+    color: "#FFFFFF",
     lineHeight: 48,
     letterSpacing: -1,
   },
@@ -518,14 +631,14 @@ const profileStyles = StyleSheet.create({
   },
   starDisplay: {
     fontSize: 20,
-    color: "#3A3F47",
+    color: "#404040",
     lineHeight: 24,
   },
   starDisplayFilled: {
     color: "#F59E0B",
   },
   ratingCountLabel: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 12,
     fontFamily: "InterMedium",
   },
@@ -536,19 +649,87 @@ const profileStyles = StyleSheet.create({
   },
   reviewStarGlyph: {
     fontSize: 14,
-    color: "#3A3F47",
+    color: "#404040",
     lineHeight: 18,
   },
   reviewStarFilled: {
     color: "#F59E0B",
   },
-  sectionSubheading: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    fontFamily: "InterMedium",
-    letterSpacing: 0.8,
+  addressCard: {
+    borderWidth: 1,
+    borderColor: "#383838",
+    backgroundColor: "#262626",
+    borderRadius: 16,
+    overflow: "hidden",
   },
-  homeSaveRow: {
-    marginTop: 12,
+  addressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  addressIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    backgroundColor: "#1E1E1E",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  addressIcon: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  addressTextCol: {
+    flex: 1,
+    gap: 2,
+  },
+  addressLabel: {
+    fontSize: 13,
+    color: "#C0C0C0",
+    fontFamily: "InterBold",
+  },
+  addressValue: {
+    fontSize: 13,
+    color: "#F0F0F0",
+    fontFamily: "InterMedium",
+  },
+  addressEmpty: {
+    color: "#505050",
+  },
+  addressAddHint: {
+    color: "#5BA0F2",
+    fontSize: 13,
+    fontFamily: "InterMedium",
+  },
+  clearAddressBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    backgroundColor: "#1E1E1E",
+    borderWidth: 1,
+    borderColor: "#383838",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearAddressBtnText: {
+    color: "#8A8A8A",
+    fontSize: 18,
+    fontFamily: "InterMedium",
+    lineHeight: 22,
+  },
+  addressDivider: {
+    height: 1,
+    backgroundColor: "#383838",
+  },
+  inlineEditor: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    gap: 10,
+  },
+  inlineEditorActions: {
+    flexDirection: "row",
+    gap: 8,
   },
 });

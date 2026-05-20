@@ -30,7 +30,7 @@ export function HeaderProfileActions() {
               height: 28,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: "#60A5FA",
+              borderColor: "#5BA0F2",
             }}
           />
         ) : (
@@ -40,8 +40,8 @@ export function HeaderProfileActions() {
               height: 28,
               borderRadius: 14,
               borderWidth: 1,
-              borderColor: "#60A5FA",
-              backgroundColor: "#1F3654",
+              borderColor: "#5BA0F2",
+              backgroundColor: "#1A2C45",
               alignItems: "center",
               justifyContent: "center",
             }}>

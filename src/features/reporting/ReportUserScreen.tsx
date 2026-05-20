@@ -130,7 +130,7 @@ export function ReportUserScreen() {
               ref={reportedNameRef}
               onFocus={() => onInputFocus(reportedNameRef)}
               placeholder="Enter the user's name"
-              placeholderTextColor="#7B879C"
+              placeholderTextColor="#606060"
             />
             {suggestions.length > 0 ? (
               <View style={styles.postList}>
@@ -192,7 +192,7 @@ export function ReportUserScreen() {
               ref={reasonRef}
               onFocus={() => onInputFocus(reasonRef)}
               placeholder="Describe what happened"
-              placeholderTextColor="#7B879C"
+              placeholderTextColor="#606060"
               multiline
               textAlignVertical="top"
             />

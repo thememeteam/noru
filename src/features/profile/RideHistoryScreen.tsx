@@ -36,7 +36,7 @@ export function RideHistoryScreen() {
         <ScrollView contentContainerStyle={[styles.boardContent, { paddingHorizontal: 16 }]}>
           {rideHistory === undefined ? (
             <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color="#1E6CCC" />
+              <ActivityIndicator size="large" color="#276EF1" />
             </View>
           ) : pastRides.length === 0 ? (
             <Text style={styles.description}>No past rides found yet.</Text>

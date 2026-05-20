@@ -99,6 +99,8 @@ export function HostRideScreen() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [fieldTouched, setFieldTouched] = useState<Record<string, boolean>>({});
   const [showConfirm, setShowConfirm] = useState(false);
+  const [startInputKey, setStartInputKey] = useState(0);
+  const [endInputKey, setEndInputKey] = useState(0);
 
   const scrollRef = useRef<ScrollView>(null);
   const fieldY = useRef<Record<string, number>>({});
@@ -337,7 +339,7 @@ export function HostRideScreen() {
   if (onboarding === undefined || !onboarding?.isCompleted) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -349,6 +351,7 @@ export function HostRideScreen() {
 
   const isAfterNoon = new Date().getHours() >= 12;
   const homeAddress = onboarding.homeAddress?.trim() ?? "";
+  const workAddress = (onboarding as any).workAddress?.trim() ?? "";
 
   const setFieldValue = (field: "start" | "end", value: string) => {
     if (field === "start") {
@@ -371,6 +374,34 @@ export function HostRideScreen() {
     setFieldValue(field, COLLEGE_QUERY);
   };
 
+  const handleStartChange = (text: string) => {
+    const kw = text.trim().toLowerCase();
+    if (kw === "home") {
+      if (!homeAddress) { Alert.alert("Set a home address", "Add your home address in the profile screen first."); return; }
+      setStartPoint(homeAddress); setStartInputKey(k => k + 1); return;
+    }
+    if (kw === "work") {
+      if (!workAddress) { Alert.alert("Set a work address", "Add your work address in the profile screen first."); return; }
+      setStartPoint(workAddress); setStartInputKey(k => k + 1); return;
+    }
+    if (kw === "college") { setStartPoint(COLLEGE_QUERY); setStartInputKey(k => k + 1); return; }
+    setStartPoint(text);
+  };
+
+  const handleEndChange = (text: string) => {
+    const kw = text.trim().toLowerCase();
+    if (kw === "home") {
+      if (!homeAddress) { Alert.alert("Set a home address", "Add your home address in the profile screen first."); return; }
+      setEndPoint(homeAddress); setEndInputKey(k => k + 1); return;
+    }
+    if (kw === "work") {
+      if (!workAddress) { Alert.alert("Set a work address", "Add your work address in the profile screen first."); return; }
+      setEndPoint(workAddress); setEndInputKey(k => k + 1); return;
+    }
+    if (kw === "college") { setEndPoint(COLLEGE_QUERY); setEndInputKey(k => k + 1); return; }
+    setEndPoint(text);
+  };
+
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView edges={["bottom"]} style={[styles.safeArea, { paddingHorizontal: 0 }]}>
@@ -384,8 +415,9 @@ export function HostRideScreen() {
             onLayout={(e) => { fieldY.current.startPoint = e.nativeEvent.layout.y; }}>
             <Text style={hostStyles.fieldLabel}>From</Text>
             <PlacesAutocomplete
+              key={startInputKey}
               value={startPoint}
-              onChangeText={setStartPoint}
+              onChangeText={handleStartChange}
               onFocus={() => handleFieldFocus("startPoint")}
               onBlur={() => handleBlur("startPoint", startPoint)}
               placeholder="Start point"
@@ -403,8 +435,9 @@ export function HostRideScreen() {
             onLayout={(e) => { fieldY.current.endPoint = e.nativeEvent.layout.y; }}>
             <Text style={hostStyles.fieldLabel}>To</Text>
             <PlacesAutocomplete
+              key={endInputKey}
               value={endPoint}
-              onChangeText={setEndPoint}
+              onChangeText={handleEndChange}
               onFocus={() => handleFieldFocus("endPoint")}
               onBlur={() => handleBlur("endPoint", endPoint)}
               placeholder="Destination"
@@ -541,7 +574,7 @@ export function HostRideScreen() {
                 onBlur={() => handleBlur("price", totalPrice)}
                 onTouchEnd={() => scrollToField("price")}
                 placeholder="e.g. 180"
-                placeholderTextColor="#7B879C"
+                placeholderTextColor="#606060"
                 keyboardType="numeric"
               />
             </View>
@@ -724,7 +757,7 @@ const hostStyles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
-    color: "#B8C0CC",
+    color: "#8A8A8A",
     letterSpacing: 0.4,
     fontFamily: "InterMedium",
   },
@@ -735,7 +768,7 @@ const hostStyles = StyleSheet.create({
   },
   fieldHint: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
   },
   inputError: {
@@ -746,14 +779,14 @@ const hostStyles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#1E1E1E",
     borderWidth: 1,
-    borderColor: "#5B6371",
+    borderColor: "#404040",
     alignItems: "center",
     justifyContent: "center",
   },
   swapIcon: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 16,
     fontFamily: "InterMedium",
   },
@@ -762,16 +795,16 @@ const hostStyles = StyleSheet.create({
     gap: 8,
   },
   timePreset: {
-    paddingVertical: 7,
+    paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#1E1E1E",
     borderWidth: 1,
-    borderColor: "#5B6371",
+    borderColor: "#404040",
   },
   timePresetText: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
   },
   sameAddressWarning: {
@@ -783,12 +816,12 @@ const hostStyles = StyleSheet.create({
     justifyContent: "center",
   },
   timeText: {
-    color: "#E5E7EB",
+    color: "#F0F0F0",
     fontSize: 15,
     fontFamily: "InterMedium",
   },
   timePlaceholder: {
-    color: "#7B879C",
+    color: "#606060",
     fontSize: 15,
     fontFamily: "InterMedium",
   },
@@ -799,21 +832,21 @@ const hostStyles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   farePrefix: {
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontSize: 15,
     fontFamily: "InterMedium",
     marginRight: 4,
   },
   fareInput: {
     flex: 1,
-    color: "#E5E7EB",
+    color: "#F0F0F0",
     fontSize: 15,
     fontFamily: "InterMedium",
     paddingVertical: 12,
   },
   vehicleNote: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
   },
   chipDisabled: {
@@ -824,18 +857,18 @@ const hostStyles = StyleSheet.create({
   },
   optionHint: {
     fontSize: 12,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
   },
   pickerBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(15,23,42,0.45)",
+    backgroundColor: "rgba(0,0,0,0.65)",
   },
   pickerSheet: {
-    backgroundColor: "#2A2D33",
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: "#1E1E1E",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingBottom: 32,
   },
   pickerHeader: {
@@ -844,20 +877,20 @@ const hostStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "#4B5563",
+    borderBottomColor: "#383838",
   },
   pickerDone: {
-    color: "#60A5FA",
+    color: "#5BA0F2",
     fontSize: 16,
     fontFamily: "InterBold",
   },
   picker: {
-    backgroundColor: "#2A2D33",
+    backgroundColor: "#1E1E1E",
   },
   confirmSheet: {
-    backgroundColor: "#32353B",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: "#262626",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingTop: 12,
     paddingBottom: 36,
     paddingHorizontal: 20,
@@ -867,13 +900,13 @@ const hostStyles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: "#4B5563",
+    backgroundColor: "#444444",
     alignSelf: "center",
     marginBottom: 4,
   },
   confirmTitle: {
     fontSize: 18,
-    color: "#F8FAFC",
+    color: "#FFFFFF",
     fontFamily: "InterBold",
   },
   confirmRow: {
@@ -884,13 +917,13 @@ const hostStyles = StyleSheet.create({
   },
   confirmLabel: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#8A8A8A",
     fontFamily: "InterMedium",
     minWidth: 60,
   },
   confirmValue: {
     fontSize: 14,
-    color: "#E5E7EB",
+    color: "#F0F0F0",
     fontFamily: "InterMedium",
     flex: 1,
     textAlign: "right",

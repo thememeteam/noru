@@ -1,10 +1,11 @@
 import { useMutation, useQuery } from "convex/react";
 import { useRouter } from "expo-router";
 import React, { useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
+import { relativeTime } from "../../utils/time";
 import { useAppStyles } from "../theme/AppTheme";
 
 export function ModerationDashboardScreen() {
@@ -24,35 +25,83 @@ export function ModerationDashboardScreen() {
   const normalizeLocalPart = (value: string) => {
     const trimmed = value.trim().toLowerCase();
     if (!trimmed) return "";
-    if (trimmed.includes("@")) {
-      return trimmed.split("@")[0] ?? "";
-    }
-    if (trimmed.endsWith(EMAIL_SUFFIX)) {
-      return trimmed.slice(0, -EMAIL_SUFFIX.length);
-    }
+    if (trimmed.includes("@")) return trimmed.split("@")[0] ?? "";
+    if (trimmed.endsWith(EMAIL_SUFFIX)) return trimmed.slice(0, -EMAIL_SUFFIX.length);
     return trimmed;
   };
 
   const parseLocalParts = (value: string) =>
-    value
-      .split(",")
-      .map((part) => normalizeLocalPart(part))
-      .filter((part) => part.length > 0);
+    value.split(",").map((part) => normalizeLocalPart(part)).filter((part) => part.length > 0);
 
   const buildCampusEmail = (localPart: string) => `${localPart}${EMAIL_SUFFIX}`;
 
   const filteredIncidents = useMemo(() => {
-    if (!dashboard?.incidents?.length) {
-      return [];
-    }
-
+    if (!dashboard?.incidents?.length) return [];
     return dashboard.incidents.filter((report) => report.status === reportFilter);
   }, [dashboard, reportFilter]);
+
+  const groupedIncidents = useMemo(() => {
+    const groups: Record<string, typeof filteredIncidents> = {};
+    for (const report of filteredIncidents) {
+      if (!groups[report.categoryLabel]) groups[report.categoryLabel] = [];
+      groups[report.categoryLabel].push(report);
+    }
+    return Object.entries(groups);
+  }, [filteredIncidents]);
+
+  const handleBan = async () => {
+    if (!banEmail.trim() || isBanning) return;
+    const parts = parseLocalParts(banEmail);
+    if (parts.length === 0) {
+      Alert.alert("Invalid input", "Enter at least one email prefix.");
+      return;
+    }
+    const label = parts.length === 1 ? `1 user` : `${parts.length} users`;
+    Alert.alert(
+      `Ban ${label}?`,
+      `${parts.map(buildCampusEmail).join(", ")}\n\nThey will be blocked from Noru and forced to sign out.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Ban",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsBanning(true);
+              await Promise.all(parts.map((part) => banUserByEmail({ email: buildCampusEmail(part) })));
+              setBanEmail("");
+              Alert.alert("Banned", `${label.charAt(0).toUpperCase() + label.slice(1)} banned and forced to sign out.`);
+            } catch (error) {
+              Alert.alert("Could not ban", error instanceof Error ? error.message : "Please try again.");
+            } finally {
+              setIsBanning(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleUnban = async () => {
+    if (!unbanEmail.trim() || isUnbanning) return;
+    try {
+      setIsUnbanning(true);
+      const parts = parseLocalParts(unbanEmail);
+      if (parts.length === 0) throw new Error("Enter at least one email prefix.");
+      await Promise.all(parts.map((part) => unbanUserByEmail({ email: buildCampusEmail(part) })));
+      setUnbanEmail("");
+      Alert.alert("Unbanned", "The account bans have been removed.");
+    } catch (error) {
+      Alert.alert("Could not unban", error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsUnbanning(false);
+    }
+  };
 
   if (access === undefined || dashboard === undefined) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -74,103 +123,20 @@ export function ModerationDashboardScreen() {
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.card}>
+
+          <View style={localStyles.pageHeader}>
             <Text style={styles.title}>Moderation</Text>
-            <Text style={styles.sectionLabel}>Ban User</Text>
-            <TextInput
-              style={styles.input}
-              value={banEmail}
-              onChangeText={setBanEmail}
-              placeholder="Bl.en.xx.xxx2xxxx"
-              placeholderTextColor="#7B879C"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <Text style={styles.postMeta}>{EMAIL_SUFFIX}</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.buttonBase,
-                styles.buttonDanger,
-                (!banEmail.trim() || isBanning) && styles.buttonDisabled,
-                pressed && !isBanning && banEmail.trim() && styles.buttonPressed,
-              ]}
-              onPress={async () => {
-                if (!banEmail.trim() || isBanning) return;
-                try {
-                  setIsBanning(true);
-                  const parts = parseLocalParts(banEmail);
-                  if (parts.length === 0) {
-                    throw new Error("Enter at least one email prefix.");
-                  }
-                  await Promise.all(parts.map((part) => banUserByEmail({ email: buildCampusEmail(part) })));
-                  setBanEmail("");
-                  Alert.alert("Users banned", "The accounts have been banned and will be forced to sign out.");
-                } catch (error) {
-                  Alert.alert(
-                    "Could not ban user",
-                    error instanceof Error ? error.message : "Please try again.",
-                  );
-                } finally {
-                  setIsBanning(false);
-                }
-              }}
-              disabled={!banEmail.trim() || isBanning}>
-              <Text style={styles.buttonText}>Ban</Text>
-            </Pressable>
-
-            <Text style={styles.sectionLabel}>Unban User</Text>
-            <TextInput
-              style={styles.input}
-              value={unbanEmail}
-              onChangeText={setUnbanEmail}
-              placeholder="Bl.en.xx.xxx2xxxx"
-              placeholderTextColor="#7B879C"
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <Text style={styles.postMeta}>{EMAIL_SUFFIX}</Text>
-            <Pressable
-              style={({ pressed }) => [
-                styles.buttonBase,
-                styles.buttonSuccess,
-                (!unbanEmail.trim() || isUnbanning) && styles.buttonDisabled,
-                pressed && !isUnbanning && unbanEmail.trim() && styles.buttonPressed,
-              ]}
-              onPress={async () => {
-                if (!unbanEmail.trim() || isUnbanning) return;
-                try {
-                  setIsUnbanning(true);
-                  const parts = parseLocalParts(unbanEmail);
-                  if (parts.length === 0) {
-                    throw new Error("Enter at least one email prefix.");
-                  }
-                  await Promise.all(parts.map((part) => unbanUserByEmail({ email: buildCampusEmail(part) })));
-                  setUnbanEmail("");
-                  Alert.alert("Users unbanned", "The account bans have been removed.");
-                } catch (error) {
-                  Alert.alert(
-                    "Could not unban user",
-                    error instanceof Error ? error.message : "Please try again.",
-                  );
-                } finally {
-                  setIsUnbanning(false);
-                }
-              }}
-              disabled={!unbanEmail.trim() || isUnbanning}>
-              <Text style={styles.buttonText}>Unban</Text>
-            </Pressable>
-
-            <View style={styles.moderationMetricRow}>
-              <View style={styles.moderationMetricCard}>
-                <Text style={styles.moderationMetricValue}>{dashboard.openReportsCount}</Text>
-                <Text style={styles.moderationMetricLabel}>Open reports</Text>
-              </View>
-              <View style={styles.moderationMetricCard}>
-                <Text style={styles.moderationMetricValue}>{dashboard.activeUsersCount}</Text>
-                <Text style={styles.moderationMetricLabel}>Active users</Text>
-              </View>
+            <View style={styles.moderationStatRow}>
+              <Text style={styles.moderationStatValue}>{dashboard.openReportsCount}</Text>
+              <Text style={styles.moderationStatLabel}>open</Text>
+              <Text style={styles.moderationStatSep}>·</Text>
+              <Text style={styles.moderationStatValue}>{dashboard.activeUsersCount}</Text>
+              <Text style={styles.moderationStatLabel}>active users</Text>
             </View>
+          </View>
 
+          {/* Report queue — primary task */}
+          <View style={styles.card}>
             <View style={styles.vehicleRow}>
               <Pressable
                 style={[styles.vehicleChip, reportFilter === "unresolved" && styles.vehicleChipSelected]}
@@ -190,31 +156,165 @@ export function ModerationDashboardScreen() {
               </Pressable>
             </View>
 
-            <Text style={styles.sectionLabel}>{reportFilter === "unresolved" ? "Unresolved reports" : "Resolved reports"}</Text>
             {filteredIncidents.length === 0 ? (
-              <Text style={styles.description}>No {reportFilter} incidents found.</Text>
+              <Text style={styles.description}>No {reportFilter} incidents.</Text>
             ) : (
-              <View style={styles.postList}>
-                {filteredIncidents.map((report) => (
-                  <Pressable
-                    key={report._id}
-                    style={({ pressed }) => [styles.postItem, pressed && styles.buttonPressed]}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/moderation/[reportId]",
-                        params: { reportId: report._id },
-                      })
-                    }
-                  >
-                    <Text style={styles.postName}>{report.categoryLabel}</Text>
-                    <Text style={styles.postMeta}>{report.reportedName} · reported by {report.reporterName}</Text>
-                  </Pressable>
+              <View style={localStyles.reportGroups}>
+                {groupedIncidents.map(([category, reports]) => (
+                  <View key={category} style={localStyles.reportGroup}>
+                    <View style={localStyles.groupHeader}>
+                      <Text style={styles.sectionMarker}>{category}</Text>
+                      <View style={localStyles.countBadge}>
+                        <Text style={localStyles.countText}>{reports.length}</Text>
+                      </View>
+                    </View>
+                    {reports.map((report, i) => (
+                      <View key={report._id}>
+                        {i > 0 && <View style={localStyles.itemDivider} />}
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${category}: ${report.reportedName}, reported by ${report.reporterName}`}
+                          style={({ pressed }) => [localStyles.reportItemCompact, pressed && styles.buttonPressed]}
+                          onPress={() =>
+                            router.push({
+                              pathname: "/moderation/[reportId]",
+                              params: { reportId: report._id },
+                            })
+                          }
+                        >
+                          <View style={localStyles.reportItemRow}>
+                            <Text style={styles.postName}>{report.reportedName}</Text>
+                            <Text style={localStyles.timeText}>{relativeTime(report.createdAt)}</Text>
+                          </View>
+                          <Text style={styles.postMeta}>by {report.reporterName}</Text>
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
                 ))}
               </View>
             )}
           </View>
+
+          {/* Manage users — secondary tools */}
+          <View style={styles.card}>
+            <Text style={styles.sectionLabel}>Manage users</Text>
+
+            <View style={localStyles.toolSection}>
+              <Text style={styles.sectionMarker}>Ban user</Text>
+              <TextInput
+                style={styles.input}
+                value={banEmail}
+                onChangeText={setBanEmail}
+                placeholder="Bl.en.xx.xxx2xxxx"
+                placeholderTextColor="#606060"
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              <Text style={styles.postMeta}>{EMAIL_SUFFIX} · separate multiple with commas</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.buttonBase,
+                  styles.buttonDanger,
+                  (!banEmail.trim() || isBanning) && styles.buttonDisabled,
+                  pressed && !isBanning && banEmail.trim() && styles.buttonPressed,
+                ]}
+                onPress={handleBan}
+                disabled={!banEmail.trim() || isBanning}
+              >
+                <Text style={[styles.buttonText, styles.buttonTextDanger]}>
+                  {isBanning ? "Banning..." : "Ban"}
+                </Text>
+              </Pressable>
+            </View>
+
+            <View style={localStyles.toolDivider} />
+
+            <View style={localStyles.toolSection}>
+              <Text style={styles.sectionMarker}>Unban user</Text>
+              <TextInput
+                style={styles.input}
+                value={unbanEmail}
+                onChangeText={setUnbanEmail}
+                placeholder="Bl.en.xx.xxx2xxxx"
+                placeholderTextColor="#606060"
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              <Text style={styles.postMeta}>{EMAIL_SUFFIX} · separate multiple with commas</Text>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.buttonBase,
+                  styles.buttonPrimary,
+                  (!unbanEmail.trim() || isUnbanning) && styles.buttonDisabled,
+                  pressed && !isUnbanning && unbanEmail.trim() && styles.buttonPressed,
+                ]}
+                onPress={handleUnban}
+                disabled={!unbanEmail.trim() || isUnbanning}
+              >
+                <Text style={styles.buttonText}>
+                  {isUnbanning ? "Unbanning..." : "Unban"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+
         </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  pageHeader: {
+    gap: 4,
+  },
+  reportGroups: {
+    gap: 22,
+  },
+  reportGroup: {
+    gap: 0,
+  },
+  groupHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  countBadge: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 999,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  countText: {
+    fontSize: 11,
+    fontFamily: "InterBold",
+    color: "#8A8A8A",
+  },
+  reportItemCompact: {
+    paddingVertical: 10,
+    gap: 3,
+  },
+  itemDivider: {
+    height: 1,
+    backgroundColor: "#383838",
+  },
+  reportItemRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  timeText: {
+    fontSize: 13,
+    fontFamily: "InterMedium",
+    color: "#8A8A8A",
+  },
+  toolSection: {
+    gap: 10,
+  },
+  toolDivider: {
+    height: 1,
+    backgroundColor: "#383838",
+  },
+});

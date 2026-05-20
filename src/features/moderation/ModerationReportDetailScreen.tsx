@@ -7,6 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { AppButton } from "../../components/AppButton";
+import { relativeTime } from "../../utils/time";
 import { useAppStyles } from "../theme/AppTheme";
 
 export function ModerationReportDetailScreen() {
@@ -23,18 +24,12 @@ export function ModerationReportDetailScreen() {
   const [isBanning, setIsBanning] = useState(false);
 
   const selectedReport = useMemo(() => {
-    if (!dashboard?.incidents?.length || !reportId) {
-      return null;
-    }
-
+    if (!dashboard?.incidents?.length || !reportId) return null;
     return dashboard.incidents.find((item) => item._id === reportId) ?? null;
   }, [dashboard, reportId]);
 
   const onToggleStatus = async () => {
-    if (!selectedReport || isUpdatingStatus) {
-      return;
-    }
-
+    if (!selectedReport || isUpdatingStatus) return;
     try {
       setIsUpdatingStatus(true);
       await setIncidentStatus({
@@ -42,39 +37,43 @@ export function ModerationReportDetailScreen() {
         status: selectedReport.status === "resolved" ? "unresolved" : "resolved",
       });
     } catch (error) {
-      Alert.alert(
-        "Could not update incident",
-        error instanceof Error ? error.message : "Please try again.",
-      );
+      Alert.alert("Could not update incident", error instanceof Error ? error.message : "Please try again.");
     } finally {
       setIsUpdatingStatus(false);
     }
   };
 
-  const onBanUser = async () => {
-    if (!selectedReport || isBanning) {
-      return;
-    }
-
-    try {
-      setIsBanning(true);
-      await banUserFromReport({ reportId: selectedReport._id as Id<"userReports"> });
-      Alert.alert("User banned", "The reported user has been banned.");
-      router.back();
-    } catch (error) {
-      Alert.alert(
-        "Could not ban user",
-        error instanceof Error ? error.message : "Please try again.",
-      );
-    } finally {
-      setIsBanning(false);
-    }
+  const onBanUser = () => {
+    if (!selectedReport || isBanning) return;
+    Alert.alert(
+      `Ban ${selectedReport.reportedName}?`,
+      "They will be blocked from Noru and forced to sign out. This cannot be undone from this screen.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Ban",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsBanning(true);
+              await banUserFromReport({ reportId: selectedReport._id as Id<"userReports"> });
+              Alert.alert("User banned", `${selectedReport.reportedName} has been banned.`);
+              router.back();
+            } catch (error) {
+              Alert.alert("Could not ban user", error instanceof Error ? error.message : "Please try again.");
+            } finally {
+              setIsBanning(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   if (access === undefined || dashboard === undefined) {
     return (
       <View style={styles.loadingWrap}>
-        <ActivityIndicator size="large" color="#1E6CCC" />
+        <ActivityIndicator size="large" color="#276EF1" />
       </View>
     );
   }
@@ -106,60 +105,62 @@ export function ModerationReportDetailScreen() {
     );
   }
 
+  const isResolved = selectedReport.status === "resolved";
+
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.boardContent} showsVerticalScrollIndicator={false}>
-          {/* Status banner */}
-          <View style={[reportDetailStyles.statusBanner, selectedReport.status === "resolved" ? reportDetailStyles.statusBannerResolved : reportDetailStyles.statusBannerOpen]}>
-            <Text style={[reportDetailStyles.statusBannerText, selectedReport.status === "resolved" ? reportDetailStyles.statusBannerTextResolved : reportDetailStyles.statusBannerTextOpen]}>
-              {selectedReport.status === "resolved" ? "RESOLVED" : "OPEN"}
-            </Text>
-          </View>
 
-          {/* Category & reported user */}
+          {/* Incident — status badge anchored in the header row */}
           <View style={styles.card}>
-            <Text style={styles.sectionLabel}>INCIDENT</Text>
-            <Text style={reportDetailStyles.categoryTitle}>{selectedReport.categoryLabel}</Text>
+            <View style={reportDetailStyles.incidentHeader}>
+              <Text style={reportDetailStyles.categoryTitle}>{selectedReport.categoryLabel}</Text>
+              <View style={[reportDetailStyles.statusBadge, isResolved ? reportDetailStyles.statusBadgeResolved : reportDetailStyles.statusBadgeOpen]}>
+                <Text style={[reportDetailStyles.statusBadgeText, isResolved ? reportDetailStyles.statusBadgeTextResolved : reportDetailStyles.statusBadgeTextOpen]}>
+                  {isResolved ? "RESOLVED" : "OPEN"}
+                </Text>
+              </View>
+            </View>
             <View>
-              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+              <View style={styles.moderationContextRow}>
                 <Text style={styles.moderationContextLabel}>Reported user</Text>
                 <Text style={styles.moderationContextValue}>{selectedReport.reportedName}</Text>
               </View>
               <View style={styles.moderationContextDivider} />
-              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+              <View style={styles.moderationContextRow}>
                 <Text style={styles.moderationContextLabel}>Reported by</Text>
                 <Text style={styles.moderationContextValue}>{selectedReport.reporterName}</Text>
               </View>
               <View style={styles.moderationContextDivider} />
-              <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
-                <Text style={styles.moderationContextLabel}>Submitted at</Text>
-                <Text style={styles.moderationContextValue}>{new Date(selectedReport.createdAt).toLocaleString()}</Text>
+              <View style={styles.moderationContextRow}>
+                <Text style={styles.moderationContextLabel}>Submitted</Text>
+                <Text style={styles.moderationContextValue}>{relativeTime(selectedReport.createdAt)}</Text>
               </View>
             </View>
           </View>
 
-          {/* Details */}
+          {/* Reporter's description */}
           <View style={styles.card}>
-            <Text style={styles.sectionLabel}>REPORTER'S DESCRIPTION</Text>
-            <Text style={[reportDetailStyles.detailsText, { fontStyle: "italic" }]}>{selectedReport.details}</Text>
+            <Text style={styles.sectionMarker}>Reporter's description</Text>
+            <Text style={reportDetailStyles.detailsText}>{selectedReport.details}</Text>
           </View>
 
-          {/* Ride context */}
+          {/* Linked ride */}
           <View style={styles.card}>
-            <Text style={styles.sectionLabel}>LINKED RIDE</Text>
+            <Text style={styles.sectionMarker}>Linked ride</Text>
             {selectedReport.rideContext ? (
               <>
                 <Text style={reportDetailStyles.routeText}>
                   {selectedReport.rideContext.startPoint} → {selectedReport.rideContext.endPoint}
                 </Text>
                 <View>
-                  <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                  <View style={styles.moderationContextRow}>
                     <Text style={styles.moderationContextLabel}>Vehicle</Text>
                     <Text style={styles.moderationContextValue}>{selectedReport.rideContext.vehicleType}</Text>
                   </View>
                   <View style={styles.moderationContextDivider} />
-                  <View style={[styles.moderationContextRow, { paddingVertical: 6 }]}>
+                  <View style={styles.moderationContextRow}>
                     <Text style={styles.moderationContextLabel}>Host</Text>
                     <Text style={styles.moderationContextValue}>{selectedReport.rideContext.riderName}</Text>
                   </View>
@@ -170,28 +171,23 @@ export function ModerationReportDetailScreen() {
             )}
           </View>
 
-          {/* Actions */}
+          {/* Actions — status toggle + ban, separated by weight */}
           <View style={styles.buttonRow}>
             <AppButton
-              title={
-                isUpdatingStatus
-                  ? "Updating..."
-                  : selectedReport.status === "resolved"
-                    ? "Mark unresolved"
-                    : "Mark resolved"
-              }
+              title={isUpdatingStatus ? "Updating..." : isResolved ? "Mark unresolved" : "Mark resolved"}
               onPress={() => void onToggleStatus()}
               disabled={isUpdatingStatus}
               variant="secondary"
             />
+            <View style={reportDetailStyles.banSeparator} />
             <AppButton
               title={isBanning ? "Banning..." : "Ban user"}
-              onPress={() => void onBanUser()}
+              onPress={onBanUser}
               disabled={isBanning}
               variant="danger"
             />
-            <AppButton title="Back" onPress={() => router.back()} variant="secondary" />
           </View>
+
         </ScrollView>
       </SafeAreaView>
     </View>
@@ -199,44 +195,55 @@ export function ModerationReportDetailScreen() {
 }
 
 const reportDetailStyles = StyleSheet.create({
-  statusBanner: {
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    alignSelf: "flex-start",
-    marginBottom: 4,
-  },
-  statusBannerOpen: {
-    backgroundColor: "#1F3654",
-  },
-  statusBannerResolved: {
-    backgroundColor: "#052E16",
-  },
-  statusBannerText: {
-    fontSize: 12,
-    fontFamily: "InterBold",
-    letterSpacing: 1,
-  },
-  statusBannerTextOpen: {
-    color: "#DBEAFE",
-  },
-  statusBannerTextResolved: {
-    color: "#86EFAC",
+  incidentHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
   },
   categoryTitle: {
-    color: "#F3F4F6",
+    flex: 1,
+    color: "#FFFFFF",
     fontSize: 20,
     fontFamily: "InterBold",
   },
+  statusBadge: {
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  statusBadgeOpen: {
+    backgroundColor: "#1A2C45",
+  },
+  statusBadgeResolved: {
+    backgroundColor: "#052E16",
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontFamily: "InterBold",
+    letterSpacing: 0.6,
+  },
+  statusBadgeTextOpen: {
+    color: "#DBEAFE",
+  },
+  statusBadgeTextResolved: {
+    color: "#86EFAC",
+  },
   detailsText: {
-    color: "#E5E7EB",
+    color: "#D0D0D0",
     fontSize: 15,
-    lineHeight: 23,
+    lineHeight: 26,
     fontFamily: "InterMedium",
+    fontStyle: "italic",
   },
   routeText: {
-    color: "#F3F4F6",
+    color: "#FFFFFF",
     fontSize: 17,
     fontFamily: "InterBold",
+  },
+  banSeparator: {
+    height: 1,
+    backgroundColor: "#383838",
+    marginVertical: 4,
   },
 });
