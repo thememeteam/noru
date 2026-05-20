@@ -18,7 +18,9 @@ export function ModerationReportDetailScreen() {
   const access = useQuery(api.moderation.getModerationAccess);
   const dashboard = useQuery(api.moderation.getModerationDashboard);
   const setIncidentStatus = useMutation(api.moderation.setIncidentStatus);
+  const banUserFromReport = useMutation(api.moderation.banUserFromReport);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isBanning, setIsBanning] = useState(false);
 
   const selectedReport = useMemo(() => {
     if (!dashboard?.incidents?.length || !reportId) {
@@ -46,6 +48,26 @@ export function ModerationReportDetailScreen() {
       );
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const onBanUser = async () => {
+    if (!selectedReport || isBanning) {
+      return;
+    }
+
+    try {
+      setIsBanning(true);
+      await banUserFromReport({ reportId: selectedReport._id as Id<"userReports"> });
+      Alert.alert("User banned", "The reported user has been banned.");
+      router.back();
+    } catch (error) {
+      Alert.alert(
+        "Could not ban user",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    } finally {
+      setIsBanning(false);
     }
   };
 
@@ -161,6 +183,12 @@ export function ModerationReportDetailScreen() {
               onPress={() => void onToggleStatus()}
               disabled={isUpdatingStatus}
               variant="secondary"
+            />
+            <AppButton
+              title={isBanning ? "Banning..." : "Ban user"}
+              onPress={() => void onBanUser()}
+              disabled={isBanning}
+              variant="danger"
             />
             <AppButton title="Back" onPress={() => router.back()} variant="secondary" />
           </View>

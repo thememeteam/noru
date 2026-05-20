@@ -13,10 +13,22 @@ export const getOnboardingState = query({
         isCompleted: false,
         universityEmail: null,
         profilePhotoUrl: null,
+        isBanned: false,
+        homeAddress: null,
+        homePlaceId: null,
       };
     }
 
     const user = await ctx.db.get(userId);
+    const normalizedEmail = user?.email?.trim().toLowerCase() ?? "";
+    const banByUser = await ctx.db
+      .query("bannedUsers")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+    const banByEmail = normalizedEmail
+      ? await ctx.db.query("bannedUsers").withIndex("by_email", (q) => q.eq("email", normalizedEmail)).first()
+      : null;
+    const isBanned = Boolean(banByUser || banByEmail);
     const profile = await ctx.db
       .query("studentProfiles")
       .withIndex("by_user_id", (q) => q.eq("userId", userId))
@@ -27,13 +39,48 @@ export const getOnboardingState = query({
       : null;
 
     return {
-      isAuthenticated: true,
-      isCompleted: profile !== null,
+      isAuthenticated: !isBanned,
+      isCompleted: profile !== null && !isBanned,
       universityEmail: user?.email ?? null,
       displayName: user?.name ?? null,
       profilePhotoUrl,
       gender: profile?.gender ?? null,
+      isBanned,
+      homeAddress: profile?.homeAddress ?? null,
+      homePlaceId: profile?.homePlaceId ?? null,
     };
+  },
+});
+
+export const updateHomeAddress = mutation({
+  args: {
+    homeAddress: v.string(),
+    homePlaceId: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new Error("You must be signed in.");
+    }
+
+    const profile = await ctx.db
+      .query("studentProfiles")
+      .withIndex("by_user_id", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile) {
+      throw new Error("Complete onboarding before setting a home address.");
+    }
+
+    const nextHome = args.homeAddress.trim();
+    if (nextHome.length < 3) {
+      throw new Error("Enter a valid home address.");
+    }
+
+    await ctx.db.patch(profile._id, {
+      homeAddress: nextHome,
+      homePlaceId: args.homePlaceId?.trim() || undefined,
+    });
   },
 });
 

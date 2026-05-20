@@ -19,7 +19,7 @@
     "moduleResolution": "Bundler",
     "isolatedModules": true,
     "noEmit": true,
-    "types": ["jest", "node"]
+    "types": ["node"]
   },
   "include": ["./**/*"],
   "exclude": ["./_generated"]

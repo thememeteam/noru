@@ -18,6 +18,10 @@ const TIME_PRESETS = [
   { label: "+1h", mins: 60 },
 ] as const;
 
+const HOME_LABEL = "Home";
+const COLLEGE_LABEL = "College";
+const COLLEGE_QUERY = "Amrita Vishwa Vidyapeetham, Bengaluru Campus";
+
 const EASE_OUT_QUART = Easing.out(Easing.poly(4));
 
 function validate(name: string, value: string): string {
@@ -126,6 +130,11 @@ export function HostRideScreen() {
   const womenOnlyEligibleVehicle = vehicleType !== "ownBike";
   const canToggleWomenOnly = isWomenOnlyEligible && womenOnlyEligibleVehicle;
 
+  const normalizeAddress = (value: string) => value.trim().toLowerCase();
+  const isSameAddress = Boolean(startPoint.trim())
+    && Boolean(endPoint.trim())
+    && normalizeAddress(startPoint) === normalizeAddress(endPoint);
+
   const canCreate =
     startPoint.trim().length >= 3
     && endPoint.trim().length >= 3
@@ -133,6 +142,7 @@ export function HostRideScreen() {
     && parsedPrice >= 20
     && rideStartAt !== null
     && !isCreating
+    && !isSameAddress
     && Object.values(fieldErrors).every(e => !e);
 
   // Button pulse: fires once when canCreate transitions false → true
@@ -337,6 +347,30 @@ export function HostRideScreen() {
     quietRide && "Quiet ride",
   ].filter(Boolean).join(", ");
 
+  const isAfterNoon = new Date().getHours() >= 12;
+  const homeAddress = onboarding.homeAddress?.trim() ?? "";
+
+  const setFieldValue = (field: "start" | "end", value: string) => {
+    if (field === "start") {
+      setStartPoint(value);
+    } else {
+      setEndPoint(value);
+    }
+  };
+
+  const applyHomeToField = (field: "start" | "end") => {
+    if (!homeAddress) {
+      Alert.alert("Set a home address", "Add your home address in the profile screen first.");
+      return;
+    }
+
+    setFieldValue(field, homeAddress);
+  };
+
+  const applyCollegeToField = (field: "start" | "end") => {
+    setFieldValue(field, COLLEGE_QUERY);
+  };
+
   return (
     <View style={styles.screenContainer}>
       <SafeAreaView edges={["bottom"]} style={[styles.safeArea, { paddingHorizontal: 0 }]}>
@@ -356,6 +390,8 @@ export function HostRideScreen() {
               onBlur={() => handleBlur("startPoint", startPoint)}
               placeholder="Start point"
               inputStyle={[styles.input, fieldTouched.startPoint && fieldErrors.startPoint ? hostStyles.inputError : null]}
+              actionLabel={isAfterNoon ? COLLEGE_LABEL : HOME_LABEL}
+              onActionPress={isAfterNoon ? () => applyCollegeToField("start") : () => applyHomeToField("start")}
             />
             {fieldTouched.startPoint && fieldErrors.startPoint
               ? <AnimatedError key={fieldErrors.startPoint} message={fieldErrors.startPoint} />
@@ -373,6 +409,8 @@ export function HostRideScreen() {
               onBlur={() => handleBlur("endPoint", endPoint)}
               placeholder="Destination"
               inputStyle={[styles.input, fieldTouched.endPoint && fieldErrors.endPoint ? hostStyles.inputError : null]}
+              actionLabel={isAfterNoon ? HOME_LABEL : COLLEGE_LABEL}
+              onActionPress={isAfterNoon ? () => applyHomeToField("end") : () => applyCollegeToField("end")}
             />
             {fieldTouched.endPoint && fieldErrors.endPoint
               ? <AnimatedError key={fieldErrors.endPoint} message={fieldErrors.endPoint} />
@@ -380,6 +418,9 @@ export function HostRideScreen() {
           </View>
 
           <AppButton title="Swap source / destination" onPress={swapPoints} variant="secondary" />
+          {isSameAddress ? (
+            <Text style={hostStyles.sameAddressWarning}>Start and End point cannot be the same</Text>
+          ) : null}
 
           <View style={hostStyles.fieldGroup}>
             <Text style={hostStyles.fieldLabel}>Vehicle type</Text>
@@ -731,6 +772,11 @@ const hostStyles = StyleSheet.create({
   timePresetText: {
     fontSize: 13,
     color: "#9CA3AF",
+    fontFamily: "InterMedium",
+  },
+  sameAddressWarning: {
+    fontSize: 12,
+    color: "#FCA5A5",
     fontFamily: "InterMedium",
   },
   timeButton: {

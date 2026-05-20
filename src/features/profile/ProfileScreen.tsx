@@ -1,14 +1,15 @@
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Image, Keyboard, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { api } from "../../../convex/_generated/api";
 import { AppButton } from "../../components/AppButton";
 import { deriveDisplayName, getAvatarInitial } from "../../lib/userDisplay";
 import { VEHICLE_LABELS } from "../rides/constants";
+import { PlacesAutocomplete } from "../rides/PlacesAutocomplete";
 import { useAppStyles } from "../theme/AppTheme";
 
 const rideDateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -48,6 +49,7 @@ export function ProfileScreen() {
     api.rides.getMyRatingReviews,
     onboardingState?.isAuthenticated ? {} : "skip",
   );
+  const updateHomeAddress = useMutation(api.onboarding.updateHomeAddress);
 
   const pastRides = useMemo(() => {
     if (!rideHistory) {
@@ -64,6 +66,13 @@ export function ProfileScreen() {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const reviewLengthRef = useRef(0);
   const [isRatingsOpen, setIsRatingsOpen] = useState(false);
+  const [homeAddress, setHomeAddress] = useState("");
+  const [isSavingHome, setIsSavingHome] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const scrollRef = useRef<ScrollView>(null);
+  const fieldY = useRef<Record<string, number>>({});
+  const focusedField = useRef<string | null>(null);
 
   useEffect(() => {
     reviewLengthRef.current = reviewItems.length;
@@ -71,6 +80,26 @@ export function ProfileScreen() {
       setReviewIndex(0);
     }
   }, [reviewItems]);
+
+  useEffect(() => {
+    if (onboardingState?.homeAddress !== undefined && onboardingState?.homeAddress !== null) {
+      setHomeAddress(onboardingState.homeAddress);
+    }
+  }, [onboardingState?.homeAddress]);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const onShow = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+      if (focusedField.current) {
+        scrollToField(focusedField.current);
+      }
+    });
+    const onHide = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => { onShow.remove(); onHide.remove(); };
+  }, []);
+
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -97,6 +126,40 @@ export function ProfileScreen() {
   const onSignOut = async () => {
     await signOut();
     router.replace("/");
+  };
+
+  const onSaveHome = async () => {
+    if (!homeAddress.trim() || isSavingHome) {
+      return;
+    }
+
+    try {
+      setIsSavingHome(true);
+      await updateHomeAddress({
+        homeAddress: homeAddress.trim(),
+      });
+      Alert.alert("Saved", "Home address updated.");
+    } catch (error) {
+      Alert.alert(
+        "Could not save",
+        error instanceof Error ? error.message : "Please try again.",
+      );
+    } finally {
+      setIsSavingHome(false);
+    }
+  };
+
+  const scrollToField = (name: string) => {
+    const y = fieldY.current[name];
+    if (y === undefined) return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 100), animated: true });
+  };
+
+  const handleFieldFocus = (name: string) => {
+    focusedField.current = name;
+    if (keyboardHeight > 0) {
+      scrollToField(name);
+    }
   };
 
   if (onboardingState === undefined) {
@@ -126,8 +189,10 @@ export function ProfileScreen() {
     <View style={styles.screenContainer}>
       <SafeAreaView style={[styles.safeArea, { paddingHorizontal: 0 }]}>
         <ScrollView
-          contentContainerStyle={[styles.boardContent, { paddingHorizontal: 16 }]}
-          showsVerticalScrollIndicator={false}>
+          ref={scrollRef}
+          contentContainerStyle={[styles.boardContent, { paddingHorizontal: 16, paddingBottom: Math.max(28, keyboardHeight) }]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled">
 
           <View style={profileStyles.identityRow}>
             {onboardingState.profilePhotoUrl ? (
@@ -149,6 +214,26 @@ export function ProfileScreen() {
                   </View>
                 ) : null}
               </View>
+            </View>
+          </View>
+
+          <View
+            onLayout={(e) => { fieldY.current.homeAddress = e.nativeEvent.layout.y; }}>
+            <Text style={profileStyles.sectionSubheading}>HOME ADDRESS</Text>
+            <PlacesAutocomplete
+              value={homeAddress}
+              onChangeText={setHomeAddress}
+              onFocus={() => handleFieldFocus("homeAddress")}
+              placeholder="Set your home address"
+              inputStyle={styles.input}
+            />
+            <View style={profileStyles.homeSaveRow}>
+              <AppButton
+                title={isSavingHome ? "Saving..." : "Save home address"}
+                onPress={() => void onSaveHome()}
+                disabled={!homeAddress.trim() || isSavingHome}
+                variant="secondary"
+              />
             </View>
           </View>
 
@@ -456,5 +541,14 @@ const profileStyles = StyleSheet.create({
   },
   reviewStarFilled: {
     color: "#F59E0B",
+  },
+  sectionSubheading: {
+    fontSize: 12,
+    color: "#9CA3AF",
+    fontFamily: "InterMedium",
+    letterSpacing: 0.8,
+  },
+  homeSaveRow: {
+    marginTop: 12,
   },
 });

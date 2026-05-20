@@ -1,8 +1,8 @@
 # Traceability Matrix (Excel Overrides PDF)
 
-## Excel test cases mapped to Jest tests
+## Excel test cases mapped to automated tests
 
-| Test Case | Title | Jest Test | Notes |
+| Test Case | Title | Test File | Notes |
 | --- | --- | --- | --- |
 | NORU-7.1 | Joining disabled if ride is full | ride-joins.unit.test.ts - "blocks joining full rides" | Uses full ride state. |
 | NORU-7.2 | Joining disabled if ride is full | ride-joins.unit.test.ts - "blocks joining full rides" | Covers zero seats left. |
@@ -29,7 +29,7 @@
 
 ## Additional coverage for required ride flows
 
-| Flow | Jest Tests |
+| Flow | Tests |
 | --- | --- |
 | Accept / reject (remove) joinee | ride-host-actions.integration.test.ts - accept/remove tests |
 | Cancel ride / end ride | ride-host-actions.integration.test.ts - stop ride tests |

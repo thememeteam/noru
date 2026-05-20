@@ -27,6 +27,36 @@ function parseAdminEmails() {
     .filter((item) => item.length > 0);
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase();
+}
+
+async function upsertBan(ctx: any, args: { email: string; userId?: string; bannedByUserId: string; reason?: string }) {
+  const normalized = normalizeEmail(args.email);
+  const existingByUser = args.userId
+    ? await ctx.db.query("bannedUsers").withIndex("by_user_id", (q: any) => q.eq("userId", args.userId)).first()
+    : null;
+  if (existingByUser) {
+    return existingByUser._id;
+  }
+
+  const existingByEmail = await ctx.db
+    .query("bannedUsers")
+    .withIndex("by_email", (q: any) => q.eq("email", normalized))
+    .first();
+  if (existingByEmail) {
+    return existingByEmail._id;
+  }
+
+  return await ctx.db.insert("bannedUsers", {
+    userId: args.userId ?? undefined,
+    email: normalized,
+    bannedAt: Date.now(),
+    bannedByUserId: args.bannedByUserId,
+    reason: args.reason?.trim() || undefined,
+  });
+}
+
 async function getAdminAccess(ctx: any, userId: any) {
   const user = await ctx.db.get(userId);
   const email = user?.email?.trim().toLowerCase() ?? "";
@@ -321,15 +351,105 @@ export const getModerationDashboard = query({
 
     const removedUsers = await ctx.db.query("removedUsers").collect();
     const removedUserSet = new Set(removedUsers.map((item) => item.userId));
+    const bannedUsers = await ctx.db.query("bannedUsers").collect();
+    const bannedUserSet = new Set(bannedUsers.map((item) => item.userId).filter(Boolean));
 
     const users = await ctx.db.query("users").collect();
-    const activeUsersCount = users.filter((user) => !removedUserSet.has(user._id)).length;
+    const activeUsersCount = users.filter((user) => !removedUserSet.has(user._id) && !bannedUserSet.has(user._id)).length;
 
     return {
       openReportsCount: unresolvedReports.length,
       activeUsersCount,
       incidents: incidentsWithRideContext,
     };
+  },
+});
+
+export const banUserByEmail = mutation({
+  args: {
+    email: v.string(),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const adminUserId = await getCurrentUserOrThrow(ctx);
+    await requireAdmin(ctx, adminUserId);
+
+    const normalized = normalizeEmail(args.email);
+    if (!normalized || !normalized.includes("@")) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    const users = await ctx.db.query("users").collect();
+    const match = users.find((user) => normalizeEmail(user.email ?? "") === normalized) ?? null;
+
+    return await upsertBan(ctx, {
+      email: normalized,
+      userId: match?._id,
+      bannedByUserId: adminUserId,
+      reason: args.reason,
+    });
+  },
+});
+
+export const unbanUserByEmail = mutation({
+  args: {
+    email: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const adminUserId = await getCurrentUserOrThrow(ctx);
+    await requireAdmin(ctx, adminUserId);
+
+    const normalized = normalizeEmail(args.email);
+    if (!normalized || !normalized.includes("@")) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    const existing = await ctx.db
+      .query("bannedUsers")
+      .withIndex("by_email", (q: any) => q.eq("email", normalized))
+      .first();
+
+    if (!existing) {
+      throw new Error("No ban found for this email.");
+    }
+
+    await ctx.db.delete(existing._id);
+  },
+});
+
+export const banUserFromReport = mutation({
+  args: {
+    reportId: v.id("userReports"),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const adminUserId = await getCurrentUserOrThrow(ctx);
+    await requireAdmin(ctx, adminUserId);
+
+    const report = await ctx.db.get(args.reportId);
+    if (!report) {
+      throw new Error("Report not found.");
+    }
+
+    const reportedUser = await ctx.db.get(report.reportedUserId);
+    if (!reportedUser?.email) {
+      throw new Error("Reported user email not found.");
+    }
+
+    await upsertBan(ctx, {
+      email: reportedUser.email,
+      userId: report.reportedUserId,
+      bannedByUserId: adminUserId,
+      reason: args.reason,
+    });
+
+    if (report.status !== "resolved") {
+      await ctx.db.patch(report._id, {
+        status: "resolved",
+        resolvedAt: Date.now(),
+        resolvedByUserId: adminUserId,
+      });
+    }
   },
 });
 

@@ -8,6 +8,8 @@ export default defineSchema({
     userId: v.id("users"),
     universityEmail: v.string(),
     profilePhotoStorageId: v.id("_storage"),
+    homeAddress: v.optional(v.string()),
+    homePlaceId: v.optional(v.string()),
     gender: v.optional(
       v.union(
         v.literal("female"),
@@ -82,6 +84,15 @@ export default defineSchema({
     removedByUserId: v.id("users"),
     reason: v.optional(v.string()),
   }).index("by_user_id", ["userId"]),
+  bannedUsers: defineTable({
+    userId: v.optional(v.id("users")),
+    email: v.string(),
+    bannedAt: v.number(),
+    bannedByUserId: v.id("users"),
+    reason: v.optional(v.string()),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_email", ["email"]),
   userRatings: defineTable({
     ridePostId: v.id("ridePosts"),
     raterUserId: v.id("users"),

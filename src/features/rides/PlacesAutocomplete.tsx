@@ -16,9 +16,17 @@ type Props = {
   onBlur?: () => void;
   placeholder?: string;
   inputStyle?: any;
+  actionLabel?: string;
+  onActionPress?: () => void;
+  onPlaceSelected?: (place: {
+    placeId: string;
+    description: string;
+    mainText: string;
+    secondaryText: string | null;
+  }) => void;
 };
 
-export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, placeholder, inputStyle }: Props) {
+export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, placeholder, inputStyle, actionLabel, onActionPress, onPlaceSelected }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -50,7 +58,13 @@ export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, place
 
   const handleSelect = (item: Suggestion) => {
     if (blurRef.current) clearTimeout(blurRef.current);
-    onChangeText(item.structured_formatting.main_text);
+    onPlaceSelected?.({
+      placeId: item.place_id,
+      description: item.description,
+      mainText: item.structured_formatting.main_text,
+      secondaryText: item.structured_formatting.secondary_text ?? null,
+    });
+    onChangeText(item.description);
     setSuggestions([]);
   };
 
@@ -65,17 +79,24 @@ export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, place
 
   return (
     <View>
-      <TextInput
-        style={inputStyle}
-        value={value}
-        onChangeText={handleChangeText}
-        onFocus={onFocus}
-        onBlur={handleBlur}
-        placeholder={placeholder}
-        placeholderTextColor="#7B879C"
-        autoCorrect={false}
-        autoComplete="off"
-      />
+      <View style={acStyles.inputWrap}>
+        <TextInput
+          style={[inputStyle, actionLabel ? acStyles.inputWithAction : null]}
+          value={value}
+          onChangeText={handleChangeText}
+          onFocus={onFocus}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          placeholderTextColor="#7B879C"
+          autoCorrect={false}
+          autoComplete="off"
+        />
+        {actionLabel && onActionPress ? (
+          <Pressable style={acStyles.inputAction} onPress={onActionPress}>
+            <Text style={acStyles.inputActionText}>{actionLabel}</Text>
+          </Pressable>
+        ) : null}
+      </View>
       {showList && (
         <View style={acStyles.list}>
           {loading && (
@@ -103,6 +124,30 @@ export function PlacesAutocomplete({ value, onChangeText, onFocus, onBlur, place
 }
 
 const acStyles = StyleSheet.create({
+  inputWrap: {
+    position: "relative",
+    width: "100%",
+    justifyContent: "center",
+  },
+  inputWithAction: {
+    paddingRight: 92,
+  },
+  inputAction: {
+    position: "absolute",
+    right: 8,
+    top: 6,
+    bottom: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1E6CCC",
+  },
+  inputActionText: {
+    color: "#EFF6FF",
+    fontSize: 12,
+    fontFamily: "InterBold",
+  },
   list: {
     backgroundColor: "#32353B",
     borderRadius: 10,

@@ -395,6 +395,11 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#7F1D1D",
   },
+  buttonSuccess: {
+    backgroundColor: "#14532D",
+    borderWidth: 1,
+    borderColor: "#166534",
+  },
   buttonPressed: {
     opacity: 0.88,
   },
