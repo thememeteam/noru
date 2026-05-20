@@ -18,7 +18,10 @@
       "Bash(Get-ChildItem -Force)",
       "Bash(Select-Object Name, FullName)",
       "Bash(Format-Table -AutoSize)",
-      "Bash(npx --yes tsc --noEmit)"
+      "Bash(npx --yes tsc --noEmit)",
+      "Bash(java *)",
+      "PowerShell(java *)",
+      "PowerShell($env:JAVA_HOME; $env:ANDROID_HOME; $env:ANDROID_SDK_ROOT)"
     ]
   }
 }

@@ -21,14 +21,12 @@ export async function setupAndroidChannels() {
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#4A90D9",
-    sound: "default",
   });
 
   await Notifications.setNotificationChannelAsync("chat", {
     name: "Group chat",
     importance: Notifications.AndroidImportance.DEFAULT,
     vibrationPattern: [0, 100],
-    sound: "default",
   });
 }
 

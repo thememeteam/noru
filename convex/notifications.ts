@@ -92,7 +92,7 @@ export const dispatchNotifications = internalAction({
       body: args.notification.body,
       data: args.notification.data ?? {},
       channelId: args.notification.channelId ?? "default",
-      sound: "default",
+      sound: true,
     }));
 
     for (let i = 0; i < messages.length; i += 100) {
