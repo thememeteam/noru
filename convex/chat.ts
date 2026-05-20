@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 async function assertChatAccess(ctx: any, ridePostId: any) {
   const userId = await getAuthUserId(ctx);
@@ -126,6 +127,30 @@ export const sendMessage = mutation({
       replyToSenderName,
       createdAt: Date.now(),
     });
+
+    const allJoins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+    const acceptedJoineeIds = allJoins
+      .filter((j) => (j.status ?? "pending") === "accepted" && j.userId !== userId)
+      .map((j) => j.userId);
+    const recipientIds = ridePost.userId !== userId
+      ? [...acceptedJoineeIds, ridePost.userId]
+      : acceptedJoineeIds;
+
+    if (recipientIds.length > 0) {
+      const preview = text.length > 80 ? text.slice(0, 77) + "..." : text;
+      await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+        userIds: recipientIds,
+        notification: {
+          title: senderName,
+          body: preview,
+          data: { ridePostId: args.ridePostId, screen: "chat" },
+          channelId: "chat",
+        },
+      });
+    }
   },
 });
 

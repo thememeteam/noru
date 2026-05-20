@@ -12,6 +12,7 @@ import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as http from "../http.js";
 import type * as moderation from "../moderation.js";
+import type * as notifications from "../notifications.js";
 import type * as onboarding from "../onboarding.js";
 import type * as rides from "../rides.js";
 
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   chat: typeof chat;
   http: typeof http;
   moderation: typeof moderation;
+  notifications: typeof notifications;
   onboarding: typeof onboarding;
   rides: typeof rides;
 }>;

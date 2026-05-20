@@ -2,6 +2,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 
 const VEHICLE_OPTIONS = {
   auto: { capacity: 2 },
@@ -531,6 +532,15 @@ export const joinRidePost = mutation({
       isFull: nextIsFull,
     });
 
+    await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+      userIds: [ridePost.userId],
+      notification: {
+        title: "New join request",
+        body: `${joineeName} wants to join your ride from ${ridePost.startPoint} to ${ridePost.endPoint}`,
+        data: { ridePostId: args.ridePostId, screen: "waiting" },
+        channelId: "rides",
+      },
+    });
   },
 });
 
@@ -568,6 +578,16 @@ export const acceptJoineeForRide = mutation({
     });
 
     await updatePricePerPersonForRide(ctx, args.ridePostId);
+
+    await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+      userIds: [args.joineeUserId],
+      notification: {
+        title: "You're in!",
+        body: `Your request to join the ride from ${ridePost.startPoint} to ${ridePost.endPoint} was accepted`,
+        data: { ridePostId: args.ridePostId, screen: "waiting" },
+        channelId: "rides",
+      },
+    });
   },
 });
 
@@ -601,6 +621,26 @@ export const startRidePost = mutation({
       startedAt: Date.now(),
       isFull: true,
     });
+
+    const acceptedJoins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+    const acceptedJoineeIds = acceptedJoins
+      .filter((j) => (j.status ?? "pending") === "accepted")
+      .map((j) => j.userId);
+
+    if (acceptedJoineeIds.length > 0) {
+      await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+        userIds: acceptedJoineeIds,
+        notification: {
+          title: "Ride is starting!",
+          body: `Your ride from ${ridePost.startPoint} to ${ridePost.endPoint} is starting now`,
+          data: { ridePostId: args.ridePostId, screen: "waiting" },
+          channelId: "rides",
+        },
+      });
+    }
   },
 });
 
@@ -639,6 +679,18 @@ export const leaveRidePost = mutation({
     if ((existingJoin.status ?? "pending") === "accepted") {
       await updatePricePerPersonForRide(ctx, args.ridePostId);
     }
+
+    const leavingUser = await ctx.db.get(userId);
+    const leavingName = leavingUser?.name?.trim() || leavingUser?.email?.trim() || "Someone";
+    await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+      userIds: [ridePost.userId],
+      notification: {
+        title: "Rider left",
+        body: `${leavingName} has left your ride from ${ridePost.startPoint} to ${ridePost.endPoint}`,
+        data: { ridePostId: args.ridePostId, screen: "waiting" },
+        channelId: "rides",
+      },
+    });
   },
 });
 
@@ -681,6 +733,16 @@ export const removeJoineeFromRide = mutation({
     if ((existingJoin.status ?? "pending") === "accepted") {
       await updatePricePerPersonForRide(ctx, args.ridePostId);
     }
+
+    await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+      userIds: [args.joineeUserId],
+      notification: {
+        title: "Removed from ride",
+        body: `You've been removed from the ride from ${ridePost.startPoint} to ${ridePost.endPoint}`,
+        data: { screen: "home" },
+        channelId: "rides",
+      },
+    });
   },
 });
 
@@ -913,6 +975,28 @@ export const stopRidePost = mutation({
       stopReason: args.reason,
     });
 
+    const allJoins = await ctx.db
+      .query("rideJoins")
+      .withIndex("by_ride_post_id", (q) => q.eq("ridePostId", args.ridePostId))
+      .collect();
+    const joineeIds = allJoins
+      .filter((j) => (j.status ?? "pending") === "accepted")
+      .map((j) => j.userId);
+
+    if (joineeIds.length > 0) {
+      const isCancelled = args.reason === "cancelled";
+      await ctx.scheduler.runAfter(0, internal.notifications.dispatchNotifications, {
+        userIds: joineeIds,
+        notification: {
+          title: isCancelled ? "Ride cancelled" : "Ride ended",
+          body: isCancelled
+            ? `The ride from ${ridePost.startPoint} to ${ridePost.endPoint} was cancelled`
+            : `The ride from ${ridePost.startPoint} to ${ridePost.endPoint} has ended`,
+          data: { screen: "home" },
+          channelId: "rides",
+        },
+      });
+    }
   },
 });
 

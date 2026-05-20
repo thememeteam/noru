@@ -135,4 +135,12 @@ export default defineSchema({
   })
     .index("by_ride_post_id", ["ridePostId"])
     .index("by_user_and_ride", ["userId", "ridePostId"]),
+  pushTokens: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    platform: v.string(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_token", ["token"]),
 });

@@ -14,7 +14,11 @@
       "Bash(Remove-Item *)",
       "Bash(findstr /i \"map\\\\|expo-map\")",
       "Bash(node_modules/.bin/tsc --noEmit)",
-      "Skill(impeccable)"
+      "Skill(impeccable)",
+      "Bash(Get-ChildItem -Force)",
+      "Bash(Select-Object Name, FullName)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(npx --yes tsc --noEmit)"
     ]
   }
 }

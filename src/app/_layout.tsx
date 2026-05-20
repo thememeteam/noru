@@ -4,14 +4,18 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
-import { Alert, Text, TextInput, View } from "react-native";
+import { Alert, Platform, Text, TextInput, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { HeaderProfileActions } from "../components/HeaderProfileActions";
 import { AppThemeProvider, useAppTheme } from "../features/theme/AppTheme";
 import { convex, convexAuthTokenStorage } from "../lib/convex";
+import {
+  registerForPushNotifications,
+  subscribeToNotificationResponses,
+} from "../lib/notifications";
 import { api } from "../../convex/_generated/api";
-import { ConvexProvider, useQuery } from "convex/react";
+import { ConvexProvider, useMutation, useQuery } from "convex/react";
 
 const BG = "#1A1A1A";
 
@@ -64,6 +68,7 @@ function AppContent({ colors }: { colors: ReturnType<typeof useAppTheme>["colors
   const onboarding = useQuery(api.onboarding.getOnboardingState);
   const { signOut } = useAuthActions();
   const [hasShownBan, setHasShownBan] = useState(false);
+  const registerPushToken = useMutation(api.notifications.registerPushToken);
 
   useEffect(() => {
     if (!onboarding?.isBanned || hasShownBan) {
@@ -77,6 +82,19 @@ function AppContent({ colors }: { colors: ReturnType<typeof useAppTheme>["colors
       [{ text: "OK", onPress: () => void signOut() }],
     );
   }, [hasShownBan, onboarding?.isBanned, signOut]);
+
+  useEffect(() => {
+    if (onboarding === undefined || !onboarding?.isCompleted) return;
+
+    void registerForPushNotifications().then((token) => {
+      if (token) {
+        void registerPushToken({ token, platform: Platform.OS });
+      }
+    });
+
+    const subscription = subscribeToNotificationResponses();
+    return () => subscription.remove();
+  }, [onboarding?.isCompleted, registerPushToken]);
 
   return (
     <View style={{ flex: 1, backgroundColor: BG }}>
