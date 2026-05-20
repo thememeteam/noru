@@ -14,9 +14,11 @@
       "backgroundColor": "#0B0F14"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "io.github.thememeteam.noru"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -52,6 +54,13 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/icon.png"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7ab145c3-3433-473a-8a9f-3e61ab450a75"
+      }
+    },
+    "owner": "rishblol"
   }
 }

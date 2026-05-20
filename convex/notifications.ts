@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
-import { internalAction, internalQuery, mutation } from "./_generated/server";
+import { internalAction, internalMutation, internalQuery, mutation } from "./_generated/server";
 import { internal } from "./_generated/api";
 
 export const registerPushToken = mutation({
@@ -69,6 +69,25 @@ export const getTokensForUsers = internalQuery({
   },
 });
 
+export const removeStaleTokens = internalMutation({
+  args: { tokens: v.array(v.string()) },
+  handler: async (ctx, args) => {
+    await Promise.all(
+      args.tokens.map(async (token) => {
+        const row = await ctx.db
+          .query("pushTokens")
+          .withIndex("by_token", (q) => q.eq("token", token))
+          .first();
+        if (row) await ctx.db.delete(row._id);
+      }),
+    );
+  },
+});
+
+type ExpoPushTicket =
+  | { status: "ok"; id: string }
+  | { status: "error"; message: string; details?: { error?: string } };
+
 export const dispatchNotifications = internalAction({
   args: {
     userIds: v.array(v.id("users")),
@@ -92,13 +111,14 @@ export const dispatchNotifications = internalAction({
       body: args.notification.body,
       data: args.notification.data ?? {},
       channelId: args.notification.channelId ?? "default",
-      sound: true,
+      sound: "default",
     }));
 
     for (let i = 0; i < messages.length; i += 100) {
       const batch = messages.slice(i, i + 100);
+      const batchTokens = tokens.slice(i, i + 100);
       try {
-        await fetch("https://exp.host/--/api/v2/push/send", {
+        const res = await fetch("https://exp.host/--/api/v2/push/send", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -107,6 +127,17 @@ export const dispatchNotifications = internalAction({
           },
           body: JSON.stringify(batch),
         });
+        const { data: tickets } = (await res.json()) as { data: ExpoPushTicket[] };
+
+        const stale = batchTokens.filter(
+          (_, idx) =>
+            tickets[idx]?.status === "error" &&
+            (tickets[idx] as Extract<ExpoPushTicket, { status: "error" }>).details?.error ===
+              "DeviceNotRegistered",
+        );
+        if (stale.length > 0) {
+          await ctx.runMutation(internal.notifications.removeStaleTokens, { tokens: stale });
+        }
       } catch {
         // Notification delivery is best-effort; silently skip on error
       }

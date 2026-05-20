@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "604471947757",
+    "project_id": "noru-ff947",
+    "storage_bucket": "noru-ff947.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604471947757:android:91390e6dd4054ac1b177e4",
+        "android_client_info": {
+          "package_name": "io.github.thememeteam.noru"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJTJXK9gtdPS7n2rTG35fUTdf6-_81jWk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -21,7 +21,11 @@
       "Bash(npx --yes tsc --noEmit)",
       "Bash(java *)",
       "PowerShell(java *)",
-      "PowerShell($env:JAVA_HOME; $env:ANDROID_HOME; $env:ANDROID_SDK_ROOT)"
+      "PowerShell($env:JAVA_HOME; $env:ANDROID_HOME; $env:ANDROID_SDK_ROOT)",
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\rish9\\\\Documents\\\\noru\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 50)",
+      "Bash(Format-Table FullName)",
+      "WebFetch(domain:docs.expo.dev)"
     ]
   }
 }

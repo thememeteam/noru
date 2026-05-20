@@ -5,7 +5,6 @@ import { router } from "expo-router";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
@@ -16,6 +15,12 @@ Notifications.setNotificationHandler({
 export async function setupAndroidChannels() {
   if (Platform.OS !== "android") return;
 
+  await Notifications.setNotificationChannelAsync("default", {
+    name: "General",
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 250, 250],
+  });
+
   await Notifications.setNotificationChannelAsync("rides", {
     name: "Ride updates",
     importance: Notifications.AndroidImportance.HIGH,
@@ -25,7 +30,7 @@ export async function setupAndroidChannels() {
 
   await Notifications.setNotificationChannelAsync("chat", {
     name: "Group chat",
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 100],
   });
 }
@@ -50,14 +55,17 @@ export async function registerForPushNotifications(): Promise<string | null> {
   try {
     const projectId =
       Constants.easConfig?.projectId ??
-      (Constants.expoConfig?.extra as any)?.eas?.projectId;
+      (Constants.expoConfig?.extra as Record<string, any>)?.eas?.projectId;
 
-    const tokenData = projectId
-      ? await Notifications.getExpoPushTokenAsync({ projectId })
-      : await Notifications.getExpoPushTokenAsync();
+    if (!projectId) {
+      console.warn("[notifications] No EAS projectId found — run `eas init` to configure it");
+      return null;
+    }
 
+    const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
     return tokenData.data;
-  } catch {
+  } catch (e) {
+    console.warn("[notifications] Failed to get push token:", e);
     return null;
   }
 }
