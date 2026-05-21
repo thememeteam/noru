@@ -42,3 +42,7 @@ yarn-error.*
 
 # personal UI/UX redesign notes
 /MEreadme
+
+# FCM service account (do not commit)
+fcm-service-account.json
+google-services-account*.json
